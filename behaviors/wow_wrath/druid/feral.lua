@@ -17,6 +17,7 @@ local function DruidFeralCombat()
   if not target then return end
 
   Me:SetTarget(target)
+  --sb.faceunit(target)
 
   if sb.faeriefire(true) then return end
   if sb.autoattack(target) then return end

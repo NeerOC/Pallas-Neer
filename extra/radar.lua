@@ -326,9 +326,14 @@ local function DrawColoredText()
 end
 
 local function DrawBurst()
+  local burstPos = World2Screen(Vec3(Me.Position.x, Me.Position.y, Me.Position.z))
+  local miniburstPos = World2Screen(Vec3(Me.Position.x, Me.Position.y, Me.Position.z + 1))
   if Combat.Burst then
-    local textBasePos = World2Screen(Vec3(Me.Position.x, Me.Position.y, Me.Position.z))
-    DrawText(textBasePos, colors.seashell, "BURSTING")
+    DrawText(burstPos, colors.seashell, "BURSTING")
+  end
+
+  if Combat.MiniBurst then
+    DrawText(miniburstPos, colors.seashell, "MINIBURST")
   end
 end
 

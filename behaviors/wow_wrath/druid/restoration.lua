@@ -43,10 +43,7 @@ local function DruidRestoHeal()
   end
   ]]
 
-  for _, v in pairs(Heal.Tanks) do
-    ---@type WoWUnit
-    local u = v.Unit
-
+  for _, u in pairs(Heal.Friends.Tanks) do
     -- this is a mess but works
     local lifebloom = u:GetAuraByMe("Lifebloom")
     if not lifebloom and u.InCombat and Spell.Lifebloom:CastEx(u) then return end

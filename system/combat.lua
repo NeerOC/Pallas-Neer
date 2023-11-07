@@ -16,6 +16,8 @@ Combat.EventListener = wector.FrameScript:CreateListener()
 Combat.EventListener:RegisterEvent("PLAYER_ENTER_COMBAT")
 Combat.EventListener:RegisterEvent("PLAYER_LEAVE_COMBAT")
 Combat.EventListener:RegisterEvent("CONSOLE_MESSAGE")
+Combat.EventListener:RegisterEvent("PLAYER_REGEN_ENABLED")
+Combat.EventListener:RegisterEvent("PLAYER_REGEN_DISABLED")
 
 local specialUnits = {
   incorporeal = 204560,
@@ -23,24 +25,39 @@ local specialUnits = {
 
 local ignoreList = {
   [45704] = true, -- Vortex Pinnacle, hiding mobs
+  [8317] = true,  -- Spirits in Sunken temple
 }
 
 ---@type boolean Console command burst to set on/off
 Combat.Burst = false
+---@type boolean Console command mini burst to set on/off
+Combat.MiniBurst = false
 
 function Combat.EventListener:CONSOLE_MESSAGE(msg)
-  if string.find(msg, "burst") and not string.find(msg, "queue") then
+  if string.find(msg, "burst") and not string.find(msg, "queue") and not string.find(msg, "mini") then
     Combat.Burst = not Combat.Burst
+  end
+
+  if string.find(msg, "miniburst") then
+    Combat.MiniBurst = not Combat.MiniBurst
   end
 end
 
 local combatStart = 0
-function Combat.EventListener:PLAYER_ENTER_COMBAT()
-  combatStart = wector.Chrono.Time
+function Combat.EventListener:PLAYER_REGEN_ENABLED()
+  combatStart = 0
+
+  if Combat.Burst then
+    Combat.Burst = false
+  end
+
+  if Combat.MiniBurst then
+    Combat.MiniBurst = false
+  end
 end
 
-function Combat.EventListener:PLAYER_LEAVE_COMBAT()
-  combatStart = 0
+function Combat.EventListener:PLAYER_REGEN_DISABLED()
+  combatStart = wector.Chrono.Time
 end
 
 function Combat:Update()
@@ -74,15 +91,15 @@ function Combat:CollectTargets()
   local flags = ObjectTypeFlag.Unit
   local units = wector.Game:GetObjectsByFlag(flags)
 
-  -- copy unit list
-  for k, u in pairs(units) do
-    self.Targets[k] = u.ToUnit
-  end
-
   if not Me.InCombat and Settings.PallasAttackOOC then
     local target = Me.Target
     if target and target:IsValidTarget() then
       table.insert(self.Targets, Me.Target)
+    end
+  else
+    -- copy unit list
+    for k, u in pairs(units) do
+      self.Targets[k] = u.ToUnit
     end
   end
 end

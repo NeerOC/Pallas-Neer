@@ -57,7 +57,7 @@ function sb.faeriefire(threatGet)
 end
 
 function sb.swipe()
-  return not Spell.Maul.IsActive and Me:GetPowerByType(PowerType.Rage) >= 25 and Combat:GetEnemiesWithinDistance(8) > 2 and
+  return (not Spell.Maul.IsActive or Me:GetPowerByType(PowerType.Rage) > 60) and Me:GetPowerByType(PowerType.Rage) >= 25 and Combat:GetEnemiesWithinDistance(8) > 2 and
       Spell.SwipeBear:CastEx(Me)
 end
 
@@ -98,6 +98,14 @@ function sb.getlowestThreat()
     DrawText(lowest:GetScreenPosition(), colors.white, "Lowest threat unit")
   end
   return lowest
+end
+
+local lastFace = 0
+function sb.faceunit(target)
+  if not Me:IsFacing(target) and wector.Game.Time > lastFace then
+    target:Interact()
+    lastFace = wector.Game.Time + 500
+  end
 end
 
 return spellbook

@@ -27,26 +27,17 @@ function WoWItem:UseX(unit)
   return self:Use(unit.ToObject)
 end
 
-
 function WoWItem:UseHealthstone()
   if Me.HealthPct > Settings.PallasHealthstonePct then return false end
   local healthstone = nil
 
   for _, item in pairs(wector.Game.Items) do
-    if item.EntryId == 5512 then
+    if string.find(item.Name, "Healthstone") then
       healthstone = item
-    end
-  end
-
-  if not healthstone then
-    for _, item in pairs(wector.Game.Items) do
-      if string.find(item.Name, "Healthstone") then
-        healthstone = item
-      end
     end
   end
 
   if not healthstone then return false end
 
-  return healthstone:UseX()
+  return healthstone:UseX() and Alert("Healthstone Used", 3)
 end
