@@ -27,7 +27,7 @@ function sb.atrophicpoison()
 end
 
 function sb.adrenalinerush()
-  return Combat.MiniBurst and Spell.AdrenalineRush:CastEx(Me)
+  return Spell.AdrenalineRush:CastEx(Me)
 end
 
 function sb.stealth()
@@ -40,6 +40,10 @@ end
 
 function sb.rollthebones()
   return not Me:HasAura(sb.auras.stealth) and Spell.RollTheBones:CastEx(Me)
+end
+
+function sb.ghostlystrike(target)
+  return Spell.GhostlyStrike:CastEx(target)
 end
 
 function sb.vanishbetween(target)
