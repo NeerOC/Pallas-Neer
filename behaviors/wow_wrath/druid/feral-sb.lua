@@ -4,6 +4,9 @@ local sb = spellbook
 
 TargetListener = wector.FrameScript:CreateListener()
 TargetListener:RegisterEvent('PLAYER_TARGET_CHANGED')
+sb.auras = {
+  swiftness = 69369
+}
 
 local changePause = 0
 function TargetListener:PLAYER_TARGET_CHANGED()
@@ -16,16 +19,41 @@ function sb.autoattack(target)
   end
 end
 
+function sb.shred(target)
+  return Me:IsBehind(target) and Spell.Shred:CastEx(target)
+end
+
 function sb.rake(target)
-  return Spell.Rake:Apply(target)
+  return Spell.Rake:Apply(target, nil, true)
 end
 
 function sb.rip(target)
-  return target:TimeToDeath() > 10 and target:TimeToDeath() ~= 9999 and Spell.Rip:Apply(target)
+  return Me:GetPowerByType(PowerType.Obsolete) >= 4 and target:TimeToDeath() > 12 and target:TimeToDeath() ~= 9999 and
+  Spell.Rip:Apply(target, nil, true)
 end
 
 function sb.ferociousbite(target)
-  return target:TimeToDeath() < 10 and Spell.FerociousBite:CastEx(target)
+  return Me:GetPowerByType(PowerType.Obsolete) >= 4 and target:TimeToDeath() < 12 and Spell.FerociousBite:CastEx(target)
+end
+
+function sb.berserk()
+  return Combat.Burst and Spell.Berserk:CastEx(Me)
+end
+
+function sb.tigersfury()
+  return Me.PowerPct < 40 and Spell.TigersFury:CastEx(Me)
+end
+
+function sb.manglecat(target)
+  return Me:GetPowerByType(PowerType.Obsolete) < 5 and Spell.MangleCat:CastEx(target)
+end
+
+function sb.faeriefirecat(target)
+  return Spell.FaerieFireFeral:Apply(target)
+end
+
+function sb.regrowth()
+  return Me.HealthPct < 70 and Me:HasAura(sb.auras.swiftness) and Spell.Regrowth:CastEx(Me)
 end
 
 -- Bear
@@ -56,8 +84,9 @@ function sb.faeriefire(threatGet)
   return Spell.FaerieFireFeral:CastEx(bestTarget)
 end
 
-function sb.swipe()
-  return (not Spell.Maul.IsActive or Me:GetPowerByType(PowerType.Rage) > 60) and Me:GetPowerByType(PowerType.Rage) >= 25 and Combat:GetEnemiesWithinDistance(8) > 2 and
+function sb.swipebear()
+  return (not Spell.Maul.IsActive or Me:GetPowerByType(PowerType.Rage) > 60) and Me:GetPowerByType(PowerType.Rage) >= 25 and
+      Combat:GetEnemiesWithinDistance(8) > 2 and
       Spell.SwipeBear:CastEx(Me)
 end
 

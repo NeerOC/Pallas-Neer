@@ -16,6 +16,7 @@ function RogueListener:CHAT_MSG_ADDON(prefix, text, channel, sender, target)
 end
 
 local function RogueOutlawMiniRotation(target)
+  if sb.stealthreturn() then return end
   if sb.sliceanddice() then return end
   if sb.rollthebones() then return end
   if sb.ambush(target) then return end
@@ -56,10 +57,10 @@ local function RogueOutlaw()
   if Me:GetDistance(target) > 15 or wector.SpellBook.GCD:CooldownRemaining() > 0 then return end
 
   if fullRotation then
-    DrawText(drawPos, colors.white, ">> Full Rotation <<")
+    DrawText(drawPos, colors.green, ">> Full Rotation <<")
     RogueOutlawFullRotation()
   else
-    DrawText(drawPos, colors.white, "<< Mini Rotation >>")
+    DrawText(drawPos, colors.red, "<< Mini Rotation >>")
     RogueOutlawMiniRotation()
   end
 end

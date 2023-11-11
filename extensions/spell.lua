@@ -228,8 +228,9 @@ end
 
 ---@param unit WoWUnit? Unit to apply our aura to.
 ---@param condition boolean? condition to fulfill before applying
+---@param expire boolean if we should let the aura expire, otherwise refresh at 2 seconds.
 ---@return boolean applied if we successfully applied our aura.
-function WoWSpell:Apply(unit, condition)
+function WoWSpell:Apply(unit, condition, expire)
   if not unit then
     print("No unit passed to function Apply")
     return false
@@ -250,7 +251,7 @@ function WoWSpell:Apply(unit, condition)
 
   local aura = unit:GetAuraByMe(self.Name)
   -- Absolute corruption exception (Aura Remaining 0)
-  if aura and (aura.Remaining > 2000 or aura.Remaining == 0) then return false end
+  if aura and ((aura.Remaining > 2000 or aura.Remaining == 0) or expire) then return false end
 
   return self:CastEx(unit) or false
 end

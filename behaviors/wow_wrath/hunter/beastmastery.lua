@@ -31,7 +31,7 @@ local function AspectToggle()
 
     return viperOrHawk and viperOrHawk:Apply(Me)
   else
-    if Spell.AspectOfTheCheetah:Apply(Me) then return end
+    if Me:IsMoving() and Spell.AspectOfTheCheetah:Apply(Me) then return end
   end
 end
 
@@ -41,7 +41,7 @@ local function PetAttack()
   local petTarget = Me.Pet.Target
 
   if not bestTarget or petTarget ~= bestTarget then Me:PetAttack(bestTarget) end
-  --if Spell.Growl:CastEx(bestTarget) then return end
+  if Spell.Growl:CastEx(bestTarget) then return end
   if Combat.Burst and Spell.Rake:CastEx(bestTarget) then return end
   if Spell.Claw:CastEx(bestTarget) then return end
 end
