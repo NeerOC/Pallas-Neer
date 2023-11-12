@@ -9,6 +9,7 @@ local options = {
 
 local nextShot = 0
 local function GetNextAutoAttack()
+  if Me:IsMoving() then return 9999 end
   local shotTime = nextShot - wector.Game.Time
   return shotTime > 0 and math.floor(shotTime) or 0
 end

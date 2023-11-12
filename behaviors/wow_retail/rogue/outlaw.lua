@@ -6,22 +6,13 @@ local colors = require("data.colors")
 RogueListener = wector.FrameScript:CreateListener()
 RogueListener:RegisterEvent('CHAT_MSG_ADDON')
 
-local fullRotation = false
+local fullRotation = true
 function RogueListener:CHAT_MSG_ADDON(prefix, text, channel, sender, target)
-  if prefix ~= "Pallas" then return end
+  if prefix ~= "pallas" then return end
 
   if text == "toggletype" then
     fullRotation = not fullRotation
   end
-end
-
-local function RogueOutlawMiniRotation(target)
-  if sb.stealthreturn() then return end
-  if sb.sliceanddice() then return end
-  if sb.rollthebones() then return end
-  if sb.ambush(target) then return end
-  if sb.pistolshot(target) then return end
-  if sb.sinisterstrike(target) then return end
 end
 
 local function RogueOutlawFullRotation(target)
@@ -29,7 +20,7 @@ local function RogueOutlawFullRotation(target)
   if sb.stealth() then return end
   if sb.rollthebones() then return end
   if sb.adrenalinerush() then return end
-  if sb.ghostlystrike() then return end
+  if sb.ghostlystrike(target) then return end
   if sb.vanishbetween(target) then return end
   if sb.dancebetween(target) then return end
   if sb.betweentheeyes(target) then return end
@@ -44,10 +35,12 @@ local function RogueOutlaw()
   if Me.IsMounted or Me:IsStunned() or Me:IsSitting() then return end
 
   if not Me.InCombat then
+    if Me.HealthPct < 80 and Spell.CrimsonVial:CastEx(Me) then return end
     if sb.instantpoison() then return end
     if sb.atrophicpoison() then return end
   end
 
+  if Spell.Stealth:Apply(Me) then return end
   local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
   if not target then return end
 
@@ -56,13 +49,7 @@ local function RogueOutlaw()
 
   if Me:GetDistance(target) > 15 or wector.SpellBook.GCD:CooldownRemaining() > 0 then return end
 
-  if fullRotation then
-    DrawText(drawPos, colors.green, ">> Full Rotation <<")
-    RogueOutlawFullRotation()
-  else
-    DrawText(drawPos, colors.red, "<< Mini Rotation >>")
-    RogueOutlawMiniRotation()
-  end
+  RogueOutlawFullRotation(target)
 end
 
 local behaviors = {

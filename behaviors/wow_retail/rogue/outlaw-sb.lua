@@ -8,7 +8,16 @@ sb.auras = {
   shadowdance = 185422,
   sliceanddice = 315496,
   audacity = 386270,
-  opportunity = 195627
+  opportunity = 195627,
+  adrenalinerush = 13750,
+  dices = {
+    broadside = 193356,
+    buriedtreasure = 199600,
+    grandmelee = 193358,
+    ruthprecision = 193357,
+    skullandbones = 199603,
+    truebearing = 193359
+  }
 }
 
 function sb.stealthreturn()
@@ -27,7 +36,8 @@ function sb.atrophicpoison()
 end
 
 function sb.adrenalinerush()
-  return Spell.AdrenalineRush:CastEx(Me)
+  return (not Me:HasAura(sb.auras.adrenalinerush) or Me:GetPowerByType(PowerType.ComboPoints) == 0) and
+      Spell.AdrenalineRush:CastEx(Me)
 end
 
 function sb.stealth()
@@ -35,11 +45,22 @@ function sb.stealth()
 end
 
 function sb.bladeflurry()
-  return Spell.BladeFlurry:Apply(Me)
+  return (table.length(Combat.Targets) > 1 or not Me:HasAura(sb.auras.subterfuge) and not Me:HasAura(sb.auras.shadowdance) and not Me:HasAura(sb.auras.stealth)) and Spell.BladeFlurry:Apply(Me)
 end
 
 function sb.rollthebones()
-  return not Me:HasAura(sb.auras.stealth) and Spell.RollTheBones:CastEx(Me)
+  if Me:HasAura(sb.auras.stealth) then return end
+
+  local auraCount = 0
+  for _, dice in pairs(sb.auras.dices) do
+    local aura = Me:GetAura(dice)
+    if aura and aura.Remaining > 2000 then
+      auraCount = auraCount + 1
+    end
+  end
+
+  return (auraCount == 0 or auraCount == 1 and not Me:HasAura(sb.auras.dices.truebearing)) and
+      Spell.RollTheBones:CastEx(Me)
 end
 
 function sb.ghostlystrike(target)
@@ -47,22 +68,28 @@ function sb.ghostlystrike(target)
 end
 
 function sb.vanishbetween(target)
+  if Me:HasAura(sb.auras.subterfuge) or Me:HasAura(sb.auras.shadowdance) then return end
   if Spell.Vanish:CooldownRemaining() > 0 or Spell.BetweenTheEyes:CooldownRemaining() > 0 or Me:GetPowerByType(PowerType.ComboPoints) < 6 then return end
 
-  Spell.Vanish:AddToQueue(Me)
+  Spell.Vanish:CastEx(Me)
   Spell.BetweenTheEyes:AddToQueue(target)
 end
 
 function sb.dancebetween(target)
+  if Me:HasAura(sb.auras.subterfuge) then return end
   if Spell.ShadowDance:CooldownRemaining() > 0 or Spell.BetweenTheEyes:CooldownRemaining() > 0 or Me:GetPowerByType(PowerType.ComboPoints) < 6 then return end
 
-  Spell.ShadowDance:AddToQueue(Me)
+  Spell.ShadowDance:CastEx(Me)
   Spell.BetweenTheEyes:AddToQueue(target)
 end
 
 function sb.betweentheeyes(target)
   if Me:GetPowerByType(PowerType.ComboPoints) < 5 then return end
-  if Spell.Vanish:CooldownRemaining() <= 45000 or Spell.ShadowDance:CooldownRemaining() < 15000 then return end
+  if not Me:HasAura(sb.auras.stealth) and not Me:HasAura(sb.auras.shadowdance) and not Me:HasAura(sb.auras.subterfuge) then
+    if Spell.Vanish:CooldownRemaining() < 45000 or Spell.ShadowDance:CooldownRemaining() < 12000 then
+      return
+    end
+  end
 
   local cp = (Me:HasAura(sb.auras.shadowdance) or Me:HasAura(sb.auras.subterfuge)) and 5 or 6
 
@@ -83,13 +110,15 @@ function sb.dispatch(target)
 end
 
 function sb.ambush(target)
-  local ambushAuras = Me:HasAura(sb.auras.audacity) or Me:HasAura(sb.auras.subterfuge) or Me:HasAura(sb.auras.shadowdance)
+  local ambushAuras = Me:HasAura(sb.auras.audacity) or Me:HasAura(sb.auras.subterfuge) or
+      Me:HasAura(sb.auras.shadowdance)
 
   return ambushAuras and Me:GetPowerByType(PowerType.ComboPoints) <= 5 and Spell.Ambush:CastEx(target)
 end
 
 function sb.pistolshot(target)
-  return Me:HasAura(sb.auras.opportunity) and Me:GetPowerByType(PowerType.ComboPoints) <= 5 and Spell.PistolShot:CastEx(target)
+  return Me:HasAura(sb.auras.opportunity) and Me:GetPowerByType(PowerType.ComboPoints) < 4 and
+      Spell.PistolShot:CastEx(target)
 end
 
 function sb.sinisterstrike(target)
