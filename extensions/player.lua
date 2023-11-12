@@ -99,3 +99,7 @@ function WoWActivePlayer:GetSpellTarget()
 
   return target and target.ToUnit
 end
+
+function WoWActivePlayer:IsAutoAttacking()
+  return Me.Target and Me:InMeleeRange(Me.Target) and Spell.AutoAttack.IsActive or Spell.AutoShot.IsAutoRepeat
+end

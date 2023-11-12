@@ -11,6 +11,7 @@ Combat.Enemies = 0
 ---@type WoWUnit[]
 Combat.Incorporeals = {}
 Combat.MirrorImages = {}
+Combat.Totems = {}
 
 Combat.EventListener = wector.FrameScript:CreateListener()
 Combat.EventListener:RegisterEvent("PLAYER_ENTER_COMBAT")
@@ -18,6 +19,7 @@ Combat.EventListener:RegisterEvent("PLAYER_LEAVE_COMBAT")
 Combat.EventListener:RegisterEvent("CONSOLE_MESSAGE")
 Combat.EventListener:RegisterEvent("PLAYER_REGEN_ENABLED")
 Combat.EventListener:RegisterEvent("PLAYER_REGEN_DISABLED")
+Combat.EventListener:RegisterEvent("CHAT_MSG_ADDON")
 
 local specialUnits = {
   incorporeal = 204560,
@@ -28,17 +30,17 @@ local ignoreList = {
   [8317] = true,  -- Spirits in Sunken temple
 }
 
----@type boolean Console command burst to set on/off
+---@type boolean Addon command burst to set on/off
 Combat.Burst = false
----@type boolean Console command mini burst to set on/off
+---@type boolean Addon command mini burst to set on/off
 Combat.MiniBurst = false
 
-function Combat.EventListener:CONSOLE_MESSAGE(msg)
-  if string.find(msg, "burst") and not string.find(msg, "queue") and not string.find(msg, "mini") then
-    Combat.Burst = not Combat.Burst
-  end
+function Combat.EventListener:CHAT_MSG_ADDON(prefix, text, channel, target)
+  if prefix ~= "pallas" then return end
 
-  if string.find(msg, "miniburst") then
+  if text == "burst" then
+    Combat.Burst = not Combat.Burst
+  elseif text == "miniburst" then
     Combat.MiniBurst = not Combat.MiniBurst
   end
 end
@@ -77,6 +79,7 @@ function Combat:Reset()
   self.Incorporeals = {}
   self.Targets = {}
   self.MirrorImages = {}
+  self.Totems = {}
 end
 
 function Combat:WantToRun()
@@ -122,6 +125,9 @@ function Combat:ExclusionFilter()
     elseif u:IsImmune() then
       self.Targets[k] = nil
     elseif ignoreList[u.EntryId] then
+      self.Targets[k] = nil
+    elseif u.CreatureType == CreatureType.Totem then
+      table.insert(self.Totems, u)
       self.Targets[k] = nil
     elseif u.EntryId == specialUnits.incorporeal then -- Add to special units, remove from targets
       if u.IsCastingOrChanneling then

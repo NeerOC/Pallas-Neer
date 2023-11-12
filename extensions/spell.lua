@@ -26,6 +26,8 @@ SpellListener = wector.FrameScript:CreateListener()
 SpellListener:RegisterEvent('UNIT_SPELLCAST_SUCCEEDED')
 SpellListener:RegisterEvent('UNIT_SPELLCAST_SENT')
 SpellListener:RegisterEvent('CONSOLE_MESSAGE')
+SpellListener:RegisterEvent('CHAT_MSG_ADDON')
+SpellListener:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
 
 ---@type table contains all queued spells called from console command.
 local queue = {}
@@ -50,7 +52,9 @@ function WoWSpell:AddToQueue(target, interrupt)
   Alert("Queued: " .. self.Name .. " on " .. target.NameUnsafe, 3)
 end
 
-function SpellListener:CONSOLE_MESSAGE(msg, color)
+function SpellListener:CHAT_MSG_ADDON(prefix, msg, channel, sender)
+  if prefix ~= "pallas" then return end
+
   if not string.find(msg, 'queue') then return end
 
   local target = string.match(msg, "queue%s*(%a*)%s*(%a+)")
@@ -78,12 +82,13 @@ function SpellListener:CONSOLE_MESSAGE(msg, color)
   end
 end
 
-local castedguid = ""
 local is_queue_spell = false
----@param castguid WoWGuid
-function SpellListener:UNIT_SPELLCAST_SENT(unit, target, castguid, spellID)
-  castedguid = castguid.ToString
+function SpellListener:COMBAT_LOG_EVENT_UNFILTERED(entry)
+  if not entry then return end
+  if entry.EventTypeName ~= "SPELL_CAST_SUCCESS" then return end
+  if entry.Source.Name ~= Me.NameUnsafe then return end
 
+  local spellID = entry.Args[1]
   if is_queue_spell then
     local spell = WoWSpell(spellID)
 
@@ -94,13 +99,6 @@ function SpellListener:UNIT_SPELLCAST_SENT(unit, target, castguid, spellID)
       end
     end
   end
-
-  spellDelay[spellID] = wector.Game.Time + math.random(150, 300)
-end
-
----@param castguid WoWGuid
-function SpellListener:UNIT_SPELLCAST_SUCCEEDED(unitTarget, castguid, SpellID)
-  if castguid.ToString ~= castedguid then return end
 
   local latency = Settings.PallasGlobalDelay and 200 or 0
   globalDelay = wector.Game.Time + latency
@@ -178,6 +176,7 @@ function WoWSpell:CastEx(a1, ...)
 
     wector.Console:Log('Cast ' .. self.Name .. ' On: ' .. unit.Name)
 
+    spellDelay[self.Id] = wector.Game.Time + math.random(100, 200)
     WoWSpell.Target = arg1.ToUnit
     return self:Cast(arg1.ToUnit)
   else
