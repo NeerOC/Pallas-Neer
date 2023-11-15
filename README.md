@@ -25,7 +25,7 @@ After installation the path to Pallas should be `<Wector root>/scripts/Pallas`
 | **Death Knight**  |                      | **Mage**          |                      | **Shaman**        |                      |
 | Blood             |         :x:          | Arcane            |         :x:          | Elemental         | :large_blue_diamond: |
 | Frost             |         :x:          | Fire              |         :x:          | Enhancement       | :large_blue_diamond: |
-| Unholy            |         :x:          | Frost             | :large_blue_diamond: | Restoration       |         :x:          |
+| Unholy            |         :x:          | Frost             | :large_blue_diamond: | Restoration       | :heavy_check_mark:   |
 | **Demon Hunter**  |                      | **Monk**          |                      | **Warlock**       |                      |
 | Havoc             | :large_blue_diamond: | Brewmaster        |         :x:          | Affliction        | :large_blue_diamond: |
 | Vengeance         | :large_blue_diamond: | Mistweaver        | :heavy_check_mark:   | Demonology        |         :x:          |
@@ -41,7 +41,7 @@ After installation the path to Pallas should be `<Wector root>/scripts/Pallas`
 |                   |                      | Shadow            |         :x:          |                   |                      |
 | **Hunter**        |                      | **Rogue**         |                      |                   |                      |
 | Beast Mastery     | :large_blue_diamond: | Assassination     |         :x:          |                   |                      |
-| Marksmanship      | :large_blue_diamond: | Outlaw            |         :x:          |                   |                      |
+| Marksmanship      | :large_blue_diamond: | Outlaw            | :heavy_check_mark:   |                   |                      |
 | Survival          |         :x:          | Sublety           |         :x:          |                   |                      |
 
 ## Status (Wrath)
