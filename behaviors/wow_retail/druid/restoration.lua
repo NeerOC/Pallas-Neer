@@ -366,9 +366,8 @@ local function DruidRestoHeal()
     end
   end
   ]]
-  for _, v in pairs(Heal.Tanks) do
+  for _, u in pairs(Heal.Friends.Tanks) do
     ---@type WoWUnit
-    local u = v.Unit
 
     -- this is a mess but works
     if Me.ShapeshiftForm == ShapeshiftForm.Cat and u.HealthPct > 80 then goto continue end

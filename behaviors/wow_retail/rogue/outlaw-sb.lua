@@ -36,20 +36,49 @@ function sb.atrophicpoison()
 end
 
 function sb.adrenalinerush()
-  return (not Me:HasAura(sb.auras.adrenalinerush) or Me:GetPowerByType(PowerType.ComboPoints) == 0) and
-      Spell.AdrenalineRush:CastEx(Me)
+  return Me:GetPowerByType(PowerType.ComboPoints) <= 2 and Spell.AdrenalineRush:Apply(Me, nil, true)
 end
 
 function sb.stealth()
   return Spell.Stealth:Apply(Me)
 end
 
+function sb.kick()
+  return Spell.Kick:Interrupt()
+end
+
+function sb.cheapshotinterrupt()
+  return Settings.RogueOutlawCheapInterrupt and Spell.CheapShot:Interrupt()
+end
+
+function sb.kidneyshotinterrupt()
+  return Settings.RogueOutlawKidneyInterrupt and Spell.KidneyShot:Interrupt()
+end
+
 function sb.bladeflurry()
-  return (table.length(Combat.Targets) > 1 or not Me:HasAura(sb.auras.subterfuge) and not Me:HasAura(sb.auras.shadowdance) and not Me:HasAura(sb.auras.stealth)) and Spell.BladeFlurry:Apply(Me)
+  local enemyCount = Combat:GetEnemiesWithinDistance(12)
+  local aoeTrigger = enemyCount >= 5
+  local combosMissing = Me:GetPowerByType(PowerType.ComboPoints) - Me:GetPowerMaxByType(PowerType.ComboPoints)
+  local hasBroad = Me:HasAura(sb.auras.dices.broadside)
+
+  if aoeTrigger and Spell.BladeFlurry:CastEx(Me) then
+    return
+  end
+
+  if enemyCount >= 3 then
+    local willGenerate = enemyCount
+    if hasBroad then
+      willGenerate = willGenerate + 1
+    end
+
+    if combosMissing >= willGenerate and Spell.BladeFlurry:CastEx(Me) then return end
+  end
+
+  return Spell.BladeFlurry:Apply(Me)
 end
 
 function sb.rollthebones()
-  if Me:HasAura(sb.auras.stealth) then return end
+  if Spell.RollTheBones:CooldownRemaining() > 0 then return end
 
   local auraCount = 0
   for _, dice in pairs(sb.auras.dices) do
@@ -64,7 +93,7 @@ function sb.rollthebones()
 end
 
 function sb.ghostlystrike(target)
-  return Spell.GhostlyStrike:CastEx(target)
+  return Me:GetPowerByType(PowerType.ComboPoints) < 7 and Spell.GhostlyStrike:CastEx(target)
 end
 
 function sb.vanishbetween(target)
@@ -85,13 +114,14 @@ end
 
 function sb.betweentheeyes(target)
   if Me:GetPowerByType(PowerType.ComboPoints) < 5 then return end
-  if not Me:HasAura(sb.auras.stealth) and not Me:HasAura(sb.auras.shadowdance) and not Me:HasAura(sb.auras.subterfuge) then
-    if Spell.Vanish:CooldownRemaining() < 45000 or Spell.ShadowDance:CooldownRemaining() < 12000 then
-      return
-    end
-  end
+  local stealthauras = Me:HasAura(sb.auras.stealth)
+      or Me:HasAura(sb.auras.subterfuge)
+      or Me:HasAura(sb.auras.shadowdance)
+  local cooldownHold = Spell.Vanish:CooldownRemaining() < 45000 or Spell.ShadowDance:CooldownRemaining() < 12000
 
-  local cp = (Me:HasAura(sb.auras.shadowdance) or Me:HasAura(sb.auras.subterfuge)) and 5 or 6
+  if not stealthauras and cooldownHold then return end
+
+  local cp = stealthauras and 5 or 6
 
   return Me:GetPowerByType(PowerType.ComboPoints) >= cp and Spell.BetweenTheEyes:CastEx(target)
 end
@@ -106,23 +136,56 @@ function sb.sliceanddice()
 end
 
 function sb.dispatch(target)
-  return Me:GetPowerByType(PowerType.ComboPoints) >= 6 and Spell.Dispatch:CastEx(target)
+  local stealthauras = Me:HasAura(sb.auras.stealth)
+      or Me:HasAura(sb.auras.subterfuge)
+      or Me:HasAura(sb.auras.shadowdance)
+  local cp = stealthauras and 5 or 6
+
+  return Me:GetPowerByType(PowerType.ComboPoints) >= cp and Spell.Dispatch:CastEx(target)
 end
 
 function sb.ambush(target)
-  local ambushAuras = Me:HasAura(sb.auras.audacity) or Me:HasAura(sb.auras.subterfuge) or
-      Me:HasAura(sb.auras.shadowdance)
+  local audacity = Me:HasAura(sb.auras.audacity)
+  local stealthAuras = Me:HasAura(sb.auras.subterfuge) or Me:HasAura(sb.auras.shadowdance) or
+      Me:HasAura(sb.auras.stealth)
+  local combos = Me:GetPowerByType(PowerType.ComboPoints)
 
-  return ambushAuras and Me:GetPowerByType(PowerType.ComboPoints) <= 5 and Spell.Ambush:CastEx(target)
+  if stealthAuras and combos < 5 then
+    return Spell.Ambush:CastEx(target)
+  end
+
+  return audacity and Spell.Ambush:CastEx(target)
 end
 
-function sb.pistolshot(target)
-  return Me:HasAura(sb.auras.opportunity) and Me:GetPowerByType(PowerType.ComboPoints) < 4 and
-      Spell.PistolShot:CastEx(target)
+function sb.pistolshot(target, noAmbush)
+  local broadSide = Me:HasAura(sb.auras.dices.broadside)
+  local combos = Me:GetPowerByType(PowerType.ComboPoints)
+  local opportunity = Me:HasAura(sb.auras.opportunity)
+  local stealth = Me:HasAura(sb.auras.stealth) or Me:HasAura(sb.auras.subterfuge) or Me:HasAura(sb.auras.shadowdance)
+
+  if broadSide and combos < 2 and opportunity and stealth then
+    if Spell.PistolShot:CastEx(target) then return end
+  end
+
+  if noAmbush then
+    return opportunity and Spell.PistolShot:CastEx(target)
+  end
 end
 
 function sb.sinisterstrike(target)
-  return Me:GetPowerByType(PowerType.ComboPoints) <= 5 and Spell.SinisterStrike:CastEx(target)
+  return Me:GetPowerByType(PowerType.ComboPoints) <= 5 and Me:GetPowerByType(PowerType.Energy) >= 50 and
+      Spell.SinisterStrike:CastEx(target)
+end
+
+function sb.tricksofthetrade()
+  if Spell.TricksOfTheTrade:CooldownRemaining() > 0 then return end
+  if not Me.FocusTarget then return end
+
+  for _, enemy in pairs(Combat.Targets) do
+    if enemy.Aggro then
+      if Spell.TricksOfTheTrade:CastEx(Me.FocusTarget) then return end
+    end
+  end
 end
 
 return spellbook

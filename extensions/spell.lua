@@ -115,6 +115,10 @@ local exclusions = {
   [391403] = true, -- Mind flay V2
 }
 
+local losExclude = {
+  [44566] = true, -- Ozumat big squid boi
+}
+
 function WoWSpell:CastEx(a1, ...)
   if queue[1] then
     local ability = queue[1].ability
@@ -172,7 +176,7 @@ function WoWSpell:CastEx(a1, ...)
     -- are we in range of unit?
     if self:HasRange(unit) and not self:InRange(unit) then return false end
 
-    if not Me:WithinLineOfSight(unit) then return false end
+    if not losExclude[unit.Id] and not Me:WithinLineOfSight(unit) then return false end
 
     wector.Console:Log('Cast ' .. self.Name .. ' On: ' .. unit.Name)
 

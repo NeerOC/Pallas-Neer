@@ -18,7 +18,6 @@ end
 local function RogueOutlawFullRotation(target)
   if sb.bladeflurry() then return end
   if sb.stealth() then return end
-  if sb.rollthebones() then return end
   if sb.adrenalinerush() then return end
   if sb.ghostlystrike(target) then return end
   if sb.vanishbetween(target) then return end
@@ -26,28 +25,43 @@ local function RogueOutlawFullRotation(target)
   if sb.betweentheeyes(target) then return end
   if sb.sliceanddice() then return end
   if sb.dispatch(target) then return end
+  if sb.pistolshot(target, false) then return end
   if sb.ambush(target) then return end
-  if sb.pistolshot(target) then return end
+  if sb.pistolshot(target, true) then return end
   if sb.sinisterstrike(target) then return end
 end
 
+local spellsCast = {}
 local function RogueOutlaw()
-  if Me.IsMounted or Me:IsStunned() or Me:IsSitting() then return end
+  for _, enemy in pairs(Combat.Targets) do
+    local spell = enemy.CurrentSpell
+    if spell and enemy.IsInterruptible and not table.contains(spellsCast, spell.Id) then
+      print(enemy.NameUnsafe .. ", is casting an Interruptible spell: " .. spell.Name .. ", With ID: " .. spell.Id)
+      table.insert(spellsCast, spell.Id)
+    end
+  end
+
+  if Me.IsMounted or Me:IsStunned() or Me:IsSitting() or Me.IsCastingOrChanneling then return end
 
   if not Me.InCombat then
-    if Me.HealthPct < 80 and Spell.CrimsonVial:CastEx(Me) then return end
+    if Me.HealthPct < 40 and Spell.CrimsonVial:CastEx(Me) then return end
     if sb.instantpoison() then return end
     if sb.atrophicpoison() then return end
   end
 
-  if Spell.Stealth:Apply(Me) then return end
+  if sb.stealth() then return end
+  if sb.kick() then return end
+  if sb.tricksofthetrade() then return end
+
   local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
   if not target then return end
 
-  local drawX, drawY, drawZ = Me.Position.x, Me.Position.y, Me.Position.z - 2
-  local drawPos = World2Screen(Vec3(drawX, drawY, drawZ))
+  if sb.rollthebones() then return end
 
-  if Me:GetDistance(target) > 15 or wector.SpellBook.GCD:CooldownRemaining() > 0 then return end
+  if Me:GetDistance(target) > 30 or wector.SpellBook.GCD:CooldownRemaining() > 0 then return end
+
+  if sb.cheapshotinterrupt() then return end
+  if sb.kidneyshotinterrupt() then return end
 
   RogueOutlawFullRotation(target)
 end
