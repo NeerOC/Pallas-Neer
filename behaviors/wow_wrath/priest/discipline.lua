@@ -109,9 +109,9 @@ local function PriestDiscHeal()
 
     if u.HealthPct < 40 and Me.HealthPct < 50 and Spell.BindingHeal:CastEx(u) then return end
 
-    if u.HealthPct < 65 and not u:HasAura("Weakened Soul") and Spell.PowerWordShield:CastEx(u) then return end
+    if u.HealthPct < 70 and not u:HasAura("Weakened Soul") and Spell.PowerWordShield:CastEx(u) then return end
 
-    if u.HealthPct < 50 and Spell.FlashHeal:CastEx(u) then return end
+    if u.HealthPct < 65 and Spell.FlashHeal:CastEx(u) then return end
 
     if u.HealthPct < 80 and Spell.Penance:CastEx(u) then return end
 
@@ -126,7 +126,7 @@ local function PriestDiscHeal()
   end
 
   for _, tank in pairs(Heal.Friends.Tanks) do
-    if tank.HealthPct < 80 and Spell.GreaterHeal:CastEx(tank) then return end
+    if tank.HealthPct < 85 and Spell.FlashHeal:CastEx(tank) then return end
   end
 
   if Dispel() then return end

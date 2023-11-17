@@ -1,4 +1,4 @@
-local common = require('behaviors.deathknight.common')
+local common = require('behaviors.wow_wrath.deathknight.common')
 
 local options = {
   -- The sub menu name
@@ -8,6 +8,10 @@ local options = {
 
   }
 }
+
+for k, v in pairs(common.widgets) do
+  table.insert(options.Widgets, v)
+end
 
 local spells = {
   BloodStrike = WoWSpell("Blood Strike"),
@@ -112,4 +116,4 @@ local behaviors = {
   [BehaviorType.Combat] = DeathknightBlood
 }
 
-return { Behaviors = behaviors }
+return {Options = options, Behaviors = behaviors }

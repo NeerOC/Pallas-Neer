@@ -219,7 +219,7 @@ function commonDeathKnight:DeathStrike(target)
         Spell.DeathStrike:CastEx(target)
 end
 
-function commonDeathKnight:RuneTap(target)
+function commonDeathKnight:RuneTap()
     return Me.HealthPct <= Settings.DeathStrikePct and
         Spell.RuneTap:CastEx(Me)
 end
