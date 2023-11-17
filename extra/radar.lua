@@ -220,6 +220,8 @@ local function CollectVisuals()
         AddToScreenList(unit, "rare")
       elseif IsTracked(unit.Name) and settings.trackManual then
         AddToScreenList(unit, "tracked")
+      elseif unit.Name == "Tracker Dragon Glyph" then
+        AddToScreenList(unit, "treasure")
       end
     end
   end
@@ -318,7 +320,7 @@ local function DrawColoredText()
     end
 
     if Settings.ExtraRadarDrawDebug then
-      text = text .. ", ID: " .. object.EntryId
+      text = text .. ", ID: " .. object.EntryId .. " Type: " .. object.Typename
     end
 
     DrawText(textpos, colors.yellow, text)

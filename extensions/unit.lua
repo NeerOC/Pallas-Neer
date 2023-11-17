@@ -347,3 +347,7 @@ function WoWUnit:InCombatWithPartyMember()
 
   return false
 end
+
+function WoWUnit:IsTrainingDummy()
+  return string.find(self.Name, "Training Dummy")
+end

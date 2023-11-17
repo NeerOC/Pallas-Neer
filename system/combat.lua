@@ -111,10 +111,15 @@ function Combat:ExclusionFilter()
   for k, u in pairs(self.Targets) do
     if not Me:CanAttack(u) then
       self.Targets[k] = nil
+    elseif u.EntryId == specialUnits.incorporeal then -- Add to special units, remove from targets
+      if u.IsCastingOrChanneling then
+        print("Added Incorp")
+        table.insert(self.Incorporeals, u)
+      end
     elseif u.Name == "Mirror Image" and not u.DeadOrGhost then
       table.insert(self.MirrorImages, u)
       self.Targets[k] = nil
-    elseif not u:InCombatWithMe() and not u:InCombatWithPartyMember() then
+    elseif not u:InCombatWithMe() and not u:InCombatWithPartyMember() and not u:IsTrainingDummy() then
       self.Targets[k] = nil
     elseif u.DeadOrGhost or u.Health <= 0 then
       self.Targets[k] = nil
@@ -128,11 +133,6 @@ function Combat:ExclusionFilter()
       self.Targets[k] = nil
     elseif u.CreatureType == CreatureType.Totem then
       table.insert(self.Totems, u)
-      self.Targets[k] = nil
-    elseif u.EntryId == specialUnits.incorporeal then -- Add to special units, remove from targets
-      if u.IsCastingOrChanneling then
-        table.insert(self.Incorporeals, u)
-      end
       self.Targets[k] = nil
     end
   end
@@ -152,6 +152,10 @@ function Combat:InclusionFilter()
     if not target.IsEnemy and Me:GetReaction(target) > UnitReaction.Neutral then
       return
     elseif target.DeadOrGhost or target.Health <= 0 then
+      return
+    elseif target:IsImmune() then
+      return
+    elseif ignoreList[target.EntryId] then
       return
     end
 

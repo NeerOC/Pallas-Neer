@@ -32,7 +32,7 @@ local function RogueOutlawFullRotation(target)
 end
 
 local spellsCast = {}
-local function RogueOutlaw()
+local function DebugCasts()
   for _, enemy in pairs(Combat.Targets) do
     local spell = enemy.CurrentSpell
     if spell and enemy.IsInterruptible and not table.contains(spellsCast, spell.Id) then
@@ -40,8 +40,27 @@ local function RogueOutlaw()
       table.insert(spellsCast, spell.Id)
     end
   end
+end
 
+local auras = {}
+local function DebugAuras()
+  local target = Me.Target
+  if target then
+    for _, aura in pairs(target.Auras) do
+      if not table.contains(auras, aura.Name) then
+        table.insert(auras, aura.Name)
+        print("Aura: " .. aura.Name .. ", ID: " .. aura.Id)
+      end
+    end
+  end
+end
+
+local function RogueOutlaw()
+  --DebugCasts()
+  --DebugAuras()
   if Me.IsMounted or Me:IsStunned() or Me:IsSitting() or Me.IsCastingOrChanneling then return end
+
+  sb.getAuras()
 
   if not Me.InCombat then
     if Me.HealthPct < 40 and Spell.CrimsonVial:CastEx(Me) then return end
@@ -49,6 +68,7 @@ local function RogueOutlaw()
     if sb.atrophicpoison() then return end
   end
 
+  if sb.handleincorp() then return end
   if sb.stealth() then return end
   if sb.kick() then return end
   if sb.tricksofthetrade() then return end
