@@ -122,10 +122,8 @@ local function UnholyDamage(target)
         Spell.BloodPresence:CastEx(Me) then
       return
     end
+    if Settings.GargoyleCD and Me:HasVisibleAura(common.auras.unholypresence.Name) and SummonGargoyle(target) then return end
   end
-
-  if Settings.GargoyleCD and Me:HasVisibleAura(common.auras.unholypresence.Name) and SummonGargoyle(target) then return end
-
   -- Maybe use pestilence to refresh diseases?
   if common:PestilenceRefresh(target) then return end
 
