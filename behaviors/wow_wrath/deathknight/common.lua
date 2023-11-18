@@ -98,7 +98,7 @@ end
 function commonDeathKnight:HornOfWinter()
     local hornofWinter = Me:GetAura(Spell.HornOfWinter.Name)
 
-    return Settings.HornOfWinter and (not hornofWinter or hornofWinter.Remaining < 30000) and
+    return Settings.HornOfWinter and ((not hornofWinter) or (hornofWinter.Remaining < 7500)) and (not Me:HasAura("Strength of Earth")) and
         Spell.HornOfWinter:CastEx(Me)
 end
 

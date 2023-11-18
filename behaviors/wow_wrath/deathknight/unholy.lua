@@ -49,13 +49,16 @@ end
 
 --Gargoyle logic
 local function SummonGargoyle(target)
-  if Me.Power >= 60 and Spell.Berserking:CastEx(Me) then Spell.SummonGargoyle:CastEx(target) return end
+  if Me.Power >= 60 and Spell.Berserking:CastEx(Me) then
+    Spell.SummonGargoyle:CastEx(target)
+    return
+  end
   return Me.Power >= 60 and Spell.SummonGargoyle:CastEx(target)
 end
 
 local function UnholyMulti(target)
   -- Force multi target waiting for runes if we are fighting more than 3 units.
-  if Combat:GetEnemiesWithinDistance(10) > 3 then
+  if Combat:GetEnemiesWithinDistance(10) > 2 then
     -- Force pestilence because Wandering Plague talent is imba.
     if common:Pestilence() then return true end
     if common:DeathAndDecay() then return end
@@ -86,25 +89,40 @@ local function UnholyDamage(target)
   -- Death strike will only happen if target has both diseases.
   if common:DeathStrike(target) then return end
 
+  if common:DeathAndDecay() then return end
+
   -- Death coil spam if we dont have gargoyle ready or mind freeze is on cooldown for more than 5 sec.
   if (Me.Power > 80 or Spell.SummonGargoyle:CooldownRemaining() > 4000) and Spell.RaiseDead:CooldownRemaining() == 0
-      and Spell.CorpseExplosion:CastEx(Me.Pet) then return end
+      and Spell.CorpseExplosion:CastEx(Me.Pet) then
+    return
+  end
 
 
   -- Death coil spam if we dont have gargoyle ready or mind freeze is on cooldown for more than 5 sec.
   if (Me.Power > 80 or Spell.SummonGargoyle:CooldownRemaining() > 4000)
-      and Spell.DeathCoil:CastEx(target) then return end
+      and Spell.DeathCoil:CastEx(target) then
+    return
+  end
+
+
 
   if Combat:GetEnemiesWithinDistance(10) > 1 then
     -- if this returns true, we are forcing the multi target routine.
     if UnholyMulti(target) then return end
   end
 
-  -- We swapping presence to maximize gargoyle damage (It's based on haste.)
-  if Spell.SummonGargoyle:CooldownRemaining() == 0 and not Me:HasVisibleAura(common.auras.unholypresence.Name) and
-      Spell.UnholyPresence:CastEx(Me) then return end
-  if Spell.SummonGargoyle:CooldownRemaining() > 5000 and not Me:HasVisibleAura(common.auras.bloodpresence.Name) and
-      Spell.BloodPresence:CastEx(Me) then return end
+  -- If it's a mob we want to actually burst on cuz we're lazy or it's a player and we're in pvp
+  if (target.Classification == 3 or (target.Classification == 1 and target.Level == 82) or target.IsPlayer) then
+    -- We swapping presence to maximize gargoyle damage (It's based on haste.)
+    if Spell.SummonGargoyle:CooldownRemaining() == 0 and not Me:HasVisibleAura(common.auras.unholypresence.Name) and
+        Spell.UnholyPresence:CastEx(Me) then
+      return
+    end
+    if Spell.SummonGargoyle:CooldownRemaining() > 5000 and not Me:HasVisibleAura(common.auras.bloodpresence.Name) and
+        Spell.BloodPresence:CastEx(Me) then
+      return
+    end
+  end
 
   if Settings.GargoyleCD and Me:HasVisibleAura(common.auras.unholypresence.Name) and SummonGargoyle(target) then return end
 
