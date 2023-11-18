@@ -114,7 +114,6 @@ function Combat:ExclusionFilter()
       self.Targets[k] = nil
     elseif u.EntryId == specialUnits.incorporeal then -- Add to special units, remove from targets
       if u.IsCastingOrChanneling then
-        print("Added Incorp")
         table.insert(self.Incorporeals, u)
       end
     elseif u.Name == "Mirror Image" and not u.DeadOrGhost then

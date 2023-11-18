@@ -213,12 +213,30 @@ function sb.tricksofthetrade()
 end
 
 function sb.handleincorp()
-  for _, target in pairs(Combat.Incorporeals) do
-    DrawText(target:GetScreenPosition(), colors.white, "Incorp")
-    if target.IsCastingOrChanneling and Me:IsFacing(target) then
-      if Spell.CheapShot:CastEx(target) then return end
-      if Spell.Blind:CastEx(target) then return end
-      if Spell.KidneyShot:CastEx(target) then return end
+  for _, enemy in pairs(Combat.Incorporeals) do
+    if enemy.IsCastingOrChanneling then
+      if Me:IsFacing(enemy) then
+        if Spell.CheapShot:CastEx(enemy) then return end
+        if Spell.KidneyShot:CastEx(enemy) then return end
+      end
+      if Spell.Blind:CastEx(enemy) then return end
+    end
+  end
+end
+
+local stunSpells = {
+  [200291] = true, -- Knife dance Black rook hold
+  [225562] = true, -- Metamorphosis, very bad.
+}
+function sb.stunspells()
+  for _, enemy in pairs(Combat.Targets) do
+    local spell = enemy.CurrentSpell
+    if spell and stunSpells[spell.Id] then
+      if Me:IsFacing(enemy) then
+        if Spell.CheapShot:CastEx(enemy) then return end
+        if Spell.KidneyShot:CastEx(enemy) then return end
+      end
+      if Spell.Blind:CastEx(enemy) then return end
     end
   end
 end

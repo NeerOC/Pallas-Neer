@@ -117,6 +117,8 @@ local exclusions = {
 
 local losExclude = {
   [44566] = true, -- Ozumat big squid boi
+  [98696] = true,
+  [131863] = true -- waycrest
 }
 
 function WoWSpell:CastEx(a1, ...)
@@ -175,7 +177,7 @@ function WoWSpell:CastEx(a1, ...)
     -- are we in range of unit?
     if self:HasRange(unit) and not self:InRange(unit) then return false end
 
-    if not losExclude[unit.Id] and not Me:WithinLineOfSight(unit) then return false end
+    if not losExclude[unit.EntryId] and not Me:WithinLineOfSight(unit) then return false end
 
     wector.Console:Log('Cast ' .. self.Name .. ' On: ' .. unit.Name)
 

@@ -68,7 +68,6 @@ local function RogueOutlaw()
     if sb.atrophicpoison() then return end
   end
 
-  if sb.handleincorp() then return end
   --if sb.pickpocket() then return end
   if sb.stealth() then return end
   if sb.kick() then return end
@@ -81,6 +80,8 @@ local function RogueOutlaw()
 
   if Me:GetDistance(target) > 30 or wector.SpellBook.GCD:CooldownRemaining() > 0 then return end
 
+  if sb.handleincorp() then return end
+  if sb.stunspells() then return end
   if sb.cheapshotinterrupt() then return end
   if sb.kidneyshotinterrupt() then return end
 
