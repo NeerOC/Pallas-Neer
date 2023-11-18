@@ -28,6 +28,7 @@ local specialUnits = {
 local ignoreList = {
   [45704] = true, -- Vortex Pinnacle, hiding mobs
   [8317] = true,  -- Spirits in Sunken temple
+  [204560] = true, -- Incorporeals, cant attack em anyway.
 }
 
 ---@type boolean Addon command burst to set on/off

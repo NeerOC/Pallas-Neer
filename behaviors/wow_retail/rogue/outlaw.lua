@@ -69,6 +69,7 @@ local function RogueOutlaw()
   end
 
   if sb.handleincorp() then return end
+  --if sb.pickpocket() then return end
   if sb.stealth() then return end
   if sb.kick() then return end
   if sb.tricksofthetrade() then return end

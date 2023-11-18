@@ -46,6 +46,10 @@ function sb.stealthreturn()
   return stealthForm or stealthed
 end
 
+function sb.hasStealthBuff()
+  return sb.stealthed or sb.subterfurge or sb.shadowdance
+end
+
 function sb.instantpoison()
   return Spell.InstantPoison:Apply(Me)
 end
@@ -72,6 +76,14 @@ end
 
 function sb.kidneyshotinterrupt()
   return Settings.RogueOutlawKidneyInterrupt and Spell.KidneyShot:Interrupt()
+end
+
+function sb.pickpocket()
+  if not sb.hasStealthBuff() then return end
+
+  for _, enemy in pairs(Combat.Targets) do
+    if enemy.CreatureType == CreatureType.Humanoid and Spell.PickPocket:CastEx(enemy) then return end
+  end
 end
 
 function sb.bladeflurry()
@@ -133,9 +145,7 @@ end
 
 function sb.betweentheeyes(target)
   if Me:GetPowerByType(PowerType.ComboPoints) < 5 then return end
-  local stealthauras = sb.stealthed
-      or sb.subterfurge
-      or sb.shadowdance
+  local stealthauras = sb.hasStealthBuff()
   local cooldownHold = Spell.Vanish:CooldownRemaining() < 45000 or Spell.ShadowDance:CooldownRemaining() < 12000
 
   if not stealthauras and cooldownHold then return end
@@ -155,9 +165,7 @@ function sb.sliceanddice()
 end
 
 function sb.dispatch(target)
-  local stealthauras = sb.stealthed
-      or sb.subterfurge
-      or sb.shadowdance
+  local stealthauras = sb.hasStealthBuff()
   local cp = stealthauras and 5 or 6
 
   return Me:GetPowerByType(PowerType.ComboPoints) >= cp and Spell.Dispatch:CastEx(target)
@@ -165,8 +173,7 @@ end
 
 function sb.ambush(target)
   local audacity = sb.audacity
-  local stealthAuras = sb.subterfurge or sb.shadowdance or
-      sb.stealthed
+  local stealthAuras = sb.hasStealthBuff()
   local combos = Me:GetPowerByType(PowerType.ComboPoints)
 
   if stealthAuras and combos < 5 then
@@ -180,8 +187,7 @@ function sb.pistolshot(target, noAmbush)
   local broadSide = sb.broadside
   local combos = Me:GetPowerByType(PowerType.ComboPoints)
   local opportunity = sb.opportunity
-  local stealth = sb.stealthed or sb.subterfurge or sb.shadowdance
-
+  local stealth = sb.hasStealthBuff()
   if broadSide and combos < 2 and opportunity and stealth then
     if Spell.PistolShot:CastEx(target) then return end
   end

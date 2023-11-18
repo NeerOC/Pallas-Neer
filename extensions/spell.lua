@@ -172,7 +172,6 @@ function WoWSpell:CastEx(a1, ...)
 
     -- unit specific checks
 
-
     -- are we in range of unit?
     if self:HasRange(unit) and not self:InRange(unit) then return false end
 
