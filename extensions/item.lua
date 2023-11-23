@@ -16,11 +16,8 @@ function WoWItem:UseX(unit)
   if not unit then return false end
 
   if itemDelay[self.EntryId] and itemDelay[self.EntryId] > wector.Game.Time then return false end
-  if not self.Spell then return false end
-  if not self.Spell:IsUsable() then return false end
   if not self.HasCooldown then return false end
   if self.CooldownRemaining > 0 then return false end
-  if not self:InRange(unit.ToObject) then return false end
 
   wector.Console:Log("Use: " .. self.Name)
   itemDelay[self.EntryId] = wector.Game.Time + math.random(150, 500)

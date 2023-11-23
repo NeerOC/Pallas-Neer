@@ -27,6 +27,8 @@ function TargetListener:COMBAT_LOG_EVENT_UNFILTERED(entry)
     nextShot = wector.Game.Time + Me.BaseRangedAttackSpeed * 1000
   end
 
+  if GetNextAutoAttack() < 1300 then return end
+
   if spellID == Spell.ArcaneShot.Id or spellID == Spell.Multishot.Id then
     if not Me:HasAura(Spell.AspectOfTheViper.Id) then
       Spell.AspectOfTheViper:Cast(Me)
@@ -43,6 +45,7 @@ local function getBestTarget()
   for _, enemy in pairs(Combat.Targets) do
     if not bestTarget or enemy:GetThreatValue(Me) > bestTarget:GetThreatValue(Me) then
       bestTarget = enemy
+      DrawText(enemy:GetScreenPosition(), colors.white, tostring(enemy:GetThreatValue(Me)))
     end
   end
 
@@ -139,10 +142,10 @@ local function HunterBeastmasteryCombat()
   if wector.SpellBook.GCD:CooldownRemaining() > 0 then return end
 
   if target:IsMoving() and not target.IsCastingOrChanneling and Combat.TimeInCombat > 3000 and target.Aggro and Spell.ConcussiveShot:CastEx(target) then return end
-  if GetNextAutoAttack() > 1300 and Combat:GetTargetsAround(target, 10) > 1 and Spell.Multishot:CastEx(target) then return end
+  if Combat:GetTargetsAround(target, 10) > 1 and Spell.Multishot:CastEx(target) then return end
   if Me:GetDistance(target) > 10 and HuntersMark(target) then return end
   if serpentSting(target) then return end
-  if GetNextAutoAttack() > 1300 and Spell.ArcaneShot:CastEx(target) then return end
+  if Spell.ArcaneShot:CastEx(target) then return end
 
   if Me:InMeleeRange(target) then
     if Spell.RaptorStrike:CastEx(target) then return end

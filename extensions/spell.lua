@@ -113,6 +113,11 @@ local exclusions = {
   [359073] = true, -- Eternity Surge
   [15407] = true,  -- Mind Flay
   [391403] = true, -- Mind flay V2
+
+}
+
+local castWhileMove = {
+  [56641] = true, -- Steady Shot
 }
 
 local losExclude = {
@@ -162,7 +167,7 @@ function WoWSpell:CastEx(a1, ...)
   if self.IsActive then return false end
 
   -- if spell has cast time, are we moving?
-  if (self.CastTime > 0 or exclusions[self.Id]) and (Me:IsMoving() and not self.ignoreCastTime or self.dontCast) then return false end
+  if (self.CastTime > 0 or exclusions[self.Id]) and ((Me:IsMoving() and not castWhileMove[self.Id]) and not self.ignoreCastTime or self.dontCast) then return false end
 
   if type(arg1) == 'userdata' and type(arg1.ToUnit) ~= 'nil' then
     -- cast at unit
@@ -175,7 +180,7 @@ function WoWSpell:CastEx(a1, ...)
     -- unit specific checks
 
     -- are we in range of unit?
-    if self:HasRange(unit) and not self:InRange(unit) then return false end
+    if not losExclude[unit.EntryId] and self:HasRange(unit) and not self:InRange(unit) then return false end
 
     if not losExclude[unit.EntryId] and not Me:WithinLineOfSight(unit) then return false end
 

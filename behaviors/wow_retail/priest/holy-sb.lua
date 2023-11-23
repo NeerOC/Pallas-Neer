@@ -130,9 +130,9 @@ function sb.GuardianSpirit(target)
 end
 
 function sb.PowerWordLife(target)
-  if target.HealthPct > Settings.PriestPowerWordLife then return false end
+  if target.HealthPct > 35 then return false end
 
-  return Spell.PowerWordLife:CastEx(target)
+  return Spell.PowerWordLife:CastEx(target, SpellCastExFlags.NoUsable)
 end
 
 --- DPS Spells

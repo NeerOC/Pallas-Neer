@@ -146,6 +146,7 @@ local ores = {
 
 local treasures = {
   -- Treasures
+  [183385] = "treasure", -- Sanguine Hibscus
   [185915] = "treasure", -- Netherwing Egg
   [386166] = "treasure", -- Bone Pile
   [386580] = "treasure", -- Neltharion Gift token

@@ -135,6 +135,10 @@ function WoWUnit:IsRooted()
   return (self.MovementFlags & MovementFlags.Root > 0)
 end
 
+function WoWUnit:IsSilenced()
+  return (self.UnitFlags & UnitFlags.Pacified > 0)
+end
+
 function WoWUnit:IsImmune()
   for _, immune in pairs(immunes.damage) do
     if self:HasAura(immune) then

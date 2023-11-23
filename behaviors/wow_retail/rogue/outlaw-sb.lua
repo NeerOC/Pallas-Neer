@@ -180,7 +180,7 @@ function sb.ambush(target)
     return Spell.Ambush:CastEx(target)
   end
 
-  return audacity and Spell.Ambush:CastEx(target)
+  return audacity and Me:GetPowerByType(PowerType.ComboPoints) <= 5 and Spell.Ambush:CastEx(target)
 end
 
 function sb.pistolshot(target, noAmbush)
@@ -193,7 +193,7 @@ function sb.pistolshot(target, noAmbush)
   end
 
   if noAmbush then
-    return opportunity and Spell.PistolShot:CastEx(target)
+    return opportunity and combos <= 5 and Spell.PistolShot:CastEx(target)
   end
 end
 
