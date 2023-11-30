@@ -126,6 +126,10 @@ local losExclude = {
   [131863] = true -- waycrest
 }
 
+local useExclude = {
+  [44566] = true, -- Ozumat big squid boi
+}
+
 function WoWSpell:CastEx(a1, ...)
   if queue[1] then
     local ability = queue[1].ability
@@ -173,9 +177,8 @@ function WoWSpell:CastEx(a1, ...)
     -- cast at unit
     local unit = arg1.ToUnit
     local flags = arg2 and arg2 or 0x0
-
     -- is spell usable?
-    if (flags & SpellCastExFlags.NoUsable) == 0 and not self:IsUsable() then return false end
+    if not useExclude[unit.EntryId] and (flags & SpellCastExFlags.NoUsable) == 0 and not self:IsUsable() then return false end
 
     -- unit specific checks
 

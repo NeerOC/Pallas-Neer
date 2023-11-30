@@ -95,6 +95,9 @@ local function MonkMistweaver()
   -- Return if we are currently casting and its not Soothing mist/Spinning Crane Kick
   if sb.mistweavercasting() then return end
 
+  -- healthstone usage global
+  if WoWItem:UseHealthstone() then return end
+
   -- OGCD Interrupt, so can used whenever we are not channeling or casting.
   if sb.spearhandstrike() then return end
 
@@ -132,8 +135,7 @@ local function MonkMistweaver()
   if sb.renewingmist() then return end
   if sb.detox() then return end
 
-
-  if not target or friend and friend.HealthPct < Settings.MistweaverVivifyPct and not Me:IsSilenced() then return end
+  if not target or friend and friend.HealthPct < Settings.MistweaverVivifyPct and not Me:IsSilenced() and not Me:IsMoving() then return end
 
   if sb.touchofdeath(target) then return end
   if sb.spinningcranekick() then return end

@@ -227,6 +227,8 @@ end
 local stunSpells = {
   [200291] = true, -- Knife dance Black rook hold
   [225562] = true, -- Metamorphosis, very bad.
+  [253721] = true, -- bulwark atal
+  [258653] = true, -- bulwark atal
 }
 function sb.stunspells()
   for _, enemy in pairs(Combat.Targets) do

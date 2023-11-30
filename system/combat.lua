@@ -26,8 +26,8 @@ local specialUnits = {
 }
 
 local ignoreList = {
-  [45704] = true, -- Vortex Pinnacle, hiding mobs
-  [8317] = true,  -- Spirits in Sunken temple
+  [45704] = true,  -- Vortex Pinnacle, hiding mobs
+  [8317] = true,   -- Spirits in Sunken temple
   [204560] = true, -- Incorporeals, cant attack em anyway.
 }
 
@@ -123,7 +123,7 @@ function Combat:ExclusionFilter()
       self.Targets[k] = nil
     elseif u.DeadOrGhost or u.Health <= 0 then
       self.Targets[k] = nil
-    elseif u:GetDistance(Me.ToUnit) > 40 then
+    elseif u:GetDistance(Me.ToUnit) > 40 and not Me:InMeleeRange(u) then
       self.Targets[k] = nil
     elseif u.IsTapDenied and (not u.Target or u.Target ~= Me) then
       self.Targets[k] = nil
@@ -141,7 +141,7 @@ end
 function Combat:InclusionFilter()
   local target = Me.Target
 
-  if target and Me:GetDistance(target) < 40 then
+  if target and (Me:GetDistance(target) < 40 or Me:InMeleeRange(target)) then
     for _, u in pairs(self.Targets) do
       if u.Guid == target.Guid then
         -- target already exists in our list
@@ -160,6 +160,7 @@ function Combat:InclusionFilter()
     end
 
     table.insert(self.Targets, target)
+    return
   end
 end
 
@@ -265,24 +266,25 @@ function Combat:GetTargetsAround(unit, distance)
   return count
 end
 
----@return boolean gathered if all targets are gathered near eachother.
----@param distance integer how far in yrds from each other do the targets have to be.
+---@return boolean True if all targets are gathered near each other, false otherwise.
+---@param distance integer The distance in yards from each other that the targets have to be.
 function Combat:AllTargetsGathered(distance)
-  if table.length(self.Targets) == 0 then return false end
-
-  local gathered = true
+  if table.length(self.Targets) <= 1 then
+    return true  -- If there's only one or zero targets, consider them gathered.
+  end
 
   for _, target in pairs(self.Targets) do
     if not target.IsCastingOrChanneling then
       for _, otarget in pairs(self.Targets) do
-        if otarget:GetDistance(target) > distance then
-          gathered = false
+        if target ~= otarget and (otarget:GetDistance(target) > distance and not Me:InMeleeRange(target)) then
+          return false  -- If any pair of targets is not gathered, return false.
         end
       end
     end
   end
 
-  return gathered
+  return true  -- If all pairs of targets are gathered, return true.
 end
+
 
 return Combat

@@ -62,6 +62,8 @@ local function RogueOutlaw()
 
   sb.getAuras()
 
+  if WoWItem:UseHealthstone() then return end
+
   if not Me.InCombat then
     if Me.HealthPct < 40 and Spell.CrimsonVial:CastEx(Me) then return end
     if sb.instantpoison() then return end

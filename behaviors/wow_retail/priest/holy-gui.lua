@@ -8,17 +8,25 @@ local gui = {
     },
     {
       type = "slider",
-      uid = "PriestHolyStopDPS",
-      text = "Cancel DPS (%)",
-      default = 50,
+      uid = "PriestHolyTrinket1Pct",
+      text = "Trinket 1 (%)",
+      default = 70,
       min = 0,
       max = 100
     },
     {
       type = "slider",
-      uid = "PriestHolyCancelOverheal",
-      text = "Cancel Overheal (%)",
-      default = 95,
+      uid = "PriestHolyTrinket2Pct",
+      text = "Trinket 2 (%)",
+      default = 70,
+      min = 0,
+      max = 100
+    },
+    {
+      type = "slider",
+      uid = "PriestHolyStopDPS",
+      text = "Cancel DPS (%)",
+      default = 50,
       min = 0,
       max = 100
     },
