@@ -23,6 +23,7 @@ local function PaladinProtCombat()
   if WoWItem:UseHealthstone() then return end
   if sb.handofreckoning() then return end
   if sb.rebuke() then return end
+  if sb.shieldoftherigtheous() then return end
 
   -- GCD Check
   local GCD = wector.SpellBook.GCD
@@ -47,7 +48,6 @@ local function PaladinProtCombat()
   end
 
   if sb.consecration() then return end
-  if sb.shieldoftherigtheous() then return end
   if sb.wordofglory() then return end
   if sb.avengersshield(target, true) then return end
   if sb.judgment(target) then return end

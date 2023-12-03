@@ -10,7 +10,8 @@ sb.auras = {
   ardentdefender = 31850,
   guardianofancientkings = 86659,
   judgment = 197277,
-  bulkwarkfury = 386652
+  bulkwarkfury = 386652,
+  shieldofrighteous = 132403
 }
 
 ProtListener = wector.FrameScript:CreateListener()
@@ -74,7 +75,7 @@ function sb.blessedhammer()
 end
 
 function sb.shieldoftherigtheous()
-  if not Me:HasAura(sb.auras.bulkwarkfury) and Me:GetPowerByType(PowerType.HolyPower) < 5 then return end
+  if not Me:HasAura(sb.auras.bulkwarkfury) and Me:GetPowerByType(PowerType.HolyPower) < 5 and Me:HasAura(sb.auras.shieldofrighteous) then return end
 
   local targetsHit = 0
 
