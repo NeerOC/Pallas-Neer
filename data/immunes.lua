@@ -5,6 +5,7 @@ local immunes = {
     113309, -- Peril & Strife immune shield
     106062, -- Wise mari shield
     197422, -- Creeping doom,
+    202455, -- Immune shield
   },
   heal = {
     57512, -- Insanity

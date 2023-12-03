@@ -15,11 +15,12 @@ local function DebugAuras()
 end
 
 local function PaladinProtCombat()
-  DebugAuras()
+  --DebugAuras()
   sb.percentfive = math.floor(sb.getdamagetakenlastseconds(5) / Me.HealthMax * 100)
 
   if Me:IsCastingFixed() or Me:IsSitting() or Me:IsStunned() or Me.IsMounted then return end
 
+  if WoWItem:UseHealthstone() then return end
   if sb.handofreckoning() then return end
   if sb.rebuke() then return end
 
@@ -28,8 +29,11 @@ local function PaladinProtCombat()
   if GCD:CooldownRemaining() > 0 then return end
 
   if sb.devotionaura() then return end
+  if sb.interecession() then return end
 
-  if sb.ardentdefender() then return end
+  if sb.handofprotection() then return end
+  if sb.stunlogic() then return end
+  if sb.defenselogic() then return end
   if sb.layonhands() then return end
   if sb.cleanse() then return end
   if sb.blessingofsacrifice() then return end
@@ -38,12 +42,11 @@ local function PaladinProtCombat()
   local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
   if not target then return end
 
-  if Me:IsAutoAttacking() then
+  if not Me:IsAutoAttacking() then
     Me:ToggleAttack()
   end
 
   if sb.consecration() then return end
-  if sb.eyeoftyr() then return end
   if sb.shieldoftherigtheous() then return end
   if sb.wordofglory() then return end
   if sb.avengersshield(target, true) then return end

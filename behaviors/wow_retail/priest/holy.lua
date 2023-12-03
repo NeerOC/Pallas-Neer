@@ -66,7 +66,23 @@ local function PriestHolyAOE(friend)
   end
 end
 
+local auras = {}
+local function DebugAuras()
+  local target = Me.Target
+  if target then
+    for _, aura in pairs(target.Auras) do
+      if not table.contains(auras, aura.Name) then
+        table.insert(auras, aura.Name)
+        print("Aura: " .. aura.Name .. ", ID: " .. aura.Id)
+      end
+    end
+  end
+end
+
 local function PriestHoly()
+  DebugAuras()
+
+
   if Me:IsSitting() or Me.IsMounted or Me:IsStunned() then return end
 
   local friend = Heal.PriorityList[1] and Heal.PriorityList[1].Unit
