@@ -67,6 +67,8 @@ function sb.judgment(target)
   for _, enemy in pairs(Combat.Targets) do
     if Me:IsFacing(enemy) and not enemy:HasAura(sb.auras.judgment) and Spell.Judgment:CastEx(enemy) then return end
   end
+
+  return Spell.Judgment:CastEx(target)
 end
 
 function sb.blessedhammer()
@@ -198,12 +200,12 @@ end
 local badDebuffs = {
   255421, -- Devour, rezan, atal
 }
-function sb.handofprotection()
-  if Spell.HandOfProtection:CooldownRemaining() > 0 or table.length(Heal.Friends.All) < 3 then return end
+function sb.blessingofprotection()
+  if Spell.BlessingOfProtection:CooldownRemaining() > 0 or table.length(Heal.Friends.All) < 3 then return end
 
   for _, friend in pairs(Heal.Friends.All) do
     for _, debuff in pairs(badDebuffs) do
-      if friend:HasAura(debuff) and Spell.HandOfProtection:CastEx(friend) then return end
+      if friend:HasAura(debuff) and Spell.BlessingOfProtection:CastEx(friend) then return end
     end
   end
 end
@@ -245,7 +247,6 @@ local stunSpells = {
   [260666] = true, -- Transfusion
   [200630] = true, -- Unnerving Screech
   [253721] = true, -- bulwark of juju
-
 }
 local stunEnemies = {
   [131009] = true, -- Spirit of gold atal
@@ -255,7 +256,7 @@ function sb.stunlogic()
   for _, enemy in pairs(Combat.Targets) do
     local spell = enemy.CurrentSpell
     if not enemy:IsStunned() then
-      if (spell and stunSpells[spell.Id] and not enemy.IsInterruptible or stunEnemies[enemy.EntryId]) then
+      if (spell and stunSpells[spell.Id] and not enemy.IsInterruptible or stunEnemies[enemy.EntryId] and not enemy:IsStunned()) then
         if Me:IsFacing(enemy) then
           if Spell.HammerOfJustice:CastEx(enemy) then return end
         end

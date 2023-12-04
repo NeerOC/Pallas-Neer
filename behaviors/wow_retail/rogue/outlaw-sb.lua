@@ -225,10 +225,42 @@ function sb.handleincorp()
 end
 
 local stunSpells = {
-  [200291] = true, -- Knife dance Black rook hold
-  [225562] = true, -- Metamorphosis, very bad.
-  [253721] = true, -- bulwark atal
-  [258653] = true, -- bulwark atal
+  [429176] = true, -- Aquablast
+  [200345] = true, -- Arrow Barrage
+  [225562] = true, -- Blood Metamorphosis
+  [225963] = true, -- Bloodthirsty Leap
+  [172578] = true, -- Bounding Whirl
+  [201139] = true, -- Brutal Assault
+  [164965] = true, -- Choking Vines
+  [413606] = true, -- Corroding Volley
+  [225573] = true, -- Dark Mending
+  [201400] = true, -- Dread Inferno
+  [253583] = true, -- Fiery Enchant
+  [411300] = true, -- Fish Bolt Volley
+  [201061] = true, -- Frenzy Potion
+  [164887] = true, -- Healing Waters
+  [76813] = true,  -- Healing Wave
+  [76820] = true,  -- Hex
+  [278444] = true, -- Infest
+  [200291] = true, -- Knife Dance
+  [253517] = true, -- Mending Word
+  [265346] = true, -- Pallid Glare
+  [198904] = true, -- Poison Spear
+  [427376] = true, -- Poisoned Spear
+  [426905] = true, -- Psionic Pulse
+  [271175] = true, -- Ravaging Leap
+  [214002] = true, -- Raven's Dive
+  [412233] = true, -- Rocket Bolt Volley
+  [200105] = true, -- Sacrifice Soul
+  [407120] = true, -- Serrated Axe
+  [264390] = true, -- Spellbind
+  [200658] = true, -- Star Shower
+  [411958] = true, -- Stonebolt
+  [412044] = true, -- Temposlice
+  [255041] = true, -- Terrifying Screech
+  [260666] = true, -- Transfusion
+  [200630] = true, -- Unnerving Screech
+  [253721] = true, -- bulwark of juju
 }
 function sb.stunspells()
   for _, enemy in pairs(Combat.Targets) do

@@ -32,7 +32,7 @@ local function PaladinProtCombat()
   if sb.devotionaura() then return end
   if sb.interecession() then return end
 
-  if sb.handofprotection() then return end
+  if sb.blessingofprotection() then return end
   if sb.stunlogic() then return end
   if sb.defenselogic() then return end
   if sb.layonhands() then return end
