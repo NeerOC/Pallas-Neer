@@ -49,6 +49,10 @@ local function PriestDiscDamage()
   local target = Me.Target
   if (not target) or (not target.IsEnemy) or (target.HealthPct < 1) or Me.PowerPct < 50 or Me.HealthPct < 75 then return end
 
+  if (target.IsPlayer and target.PowerType == PowerType.Mana) then
+    if Spell.ManaBurn:CastEx(target) then return end
+  end
+
   local shadowWordPain = target:GetVisibleAura("Shadow Word: Pain")
   if (not shadowWordPain) and Spell.ShadowWordPain:CastEx(target) then return end
 
@@ -122,7 +126,7 @@ local function PriestDiscHeal()
   end
 
   for _, dps in pairs(Heal.Friends.DPS) do
-    if dps.HealthPct < 90 and dps.InCombat and Spell.Renew:Apply(dps) then return end
+    if dps.HealthPct < 90 and not dps:HasAura("Weakened Soul") and Spell.PowerWordShield:CastEx(dps) then return end
   end
 
   for _, tank in pairs(Heal.Friends.Tanks) do

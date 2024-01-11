@@ -65,10 +65,11 @@ local function UnholyMulti(target)
     if common:BloodBoil() then return end
     return true
   end
-
-  if common:Pestilence() then return end
-  if common:DeathAndDecay() then return end
-  if common:BloodBoil() then return end
+  if Combat:GetEnemiesWithinDistance(10) > 0 then
+    if common:Pestilence() then return end
+    if common:DeathAndDecay() then return end
+    if common:BloodBoil() then return end
+  end
 end
 
 local GCD = WoWSpell(61304)
@@ -89,7 +90,9 @@ local function UnholyDamage(target)
   -- Death strike will only happen if target has both diseases.
   if common:DeathStrike(target) then return end
 
-  if common:DeathAndDecay() then return end
+  if Combat:GetEnemiesWithinDistance(8) > 0 then
+    Spell.DeathAndDecay:CastEx(target)
+  end
 
   -- Death coil spam if we dont have gargoyle ready or mind freeze is on cooldown for more than 5 sec.
   if (Me.Power > 80 or Spell.SummonGargoyle:CooldownRemaining() > 4000) and Spell.RaiseDead:CooldownRemaining() == 0
