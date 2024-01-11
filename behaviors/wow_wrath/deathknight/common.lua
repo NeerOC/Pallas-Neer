@@ -266,7 +266,7 @@ function commonDeathKnight:Interrupt()
     if not Settings.MFInterrupt and not Settings.DGInterrupt and not Settings.GnawSpell then return end
     local units = wector.Game.Units
     for _, u in pairs(units) do
-        if u:InCombatWithMe() and u.CurrentSpell then
+        if u:InCombatWithMe() and u.IsInterruptible and u.CurrentSpell then
             local cast = u.CurrentCast
             local timeLeft = 0
             local channel = u.CurrentChannel
