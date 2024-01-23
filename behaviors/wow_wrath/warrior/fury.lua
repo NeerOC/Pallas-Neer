@@ -51,7 +51,6 @@ local function WarriorFuryCombat()
   if not target then return end
 
   local aoe = Combat.EnemiesInMeleeRange > 1
-
   common:DoInterrupt()
   common:DoShout()
 
@@ -61,11 +60,11 @@ local function WarriorFuryCombat()
   -- Sunder bosses and throw shattering throw
   local sunder = target:GetVisibleAura("Sunder Armor")
   if not target:HasVisibleAura("Expose Armor") and
-      (target.Classification == 3 or (target.Classification == 1 and target.Level == 82)) and
+      (target.Classification == 3) and
       (not sunder or (sunder.Stacks < 5 or sunder.Remaining < 3000)) and Spell.SunderArmor:CastEx(target) then
     return
   end
-  if (target.Classification == 3 or (target.Classification == 1 and target.Level == 82)) and sunder and
+  if (target.Classification == 3) and sunder and
       sunder.Stacks == 5 and not target:HasVisibleAura("Shattering Throw") and Spell.ShatteringThrow:CastEx(target) then
     return
   end

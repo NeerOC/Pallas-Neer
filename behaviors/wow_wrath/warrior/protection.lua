@@ -1,4 +1,5 @@
 local common = require('behaviors.wow_wrath.warrior.common')
+local colors = require("data.colors")
 
 --[[ !TODO
   - Better thunder clap + demo should logic
@@ -59,7 +60,27 @@ for k, v in pairs(common.widgets) do
   table.insert(options.Widgets, v)
 end
 
+ProtListener = wector.FrameScript:CreateListener()
+ProtListener:RegisterEvent('CHAT_MSG_ADDON')
+
+
+local shockwave = true
+function ProtListener:CHAT_MSG_ADDON(prefix, text, channel, sender, target)
+  if prefix ~= "pallas" then return end
+
+  if text == "shockwave" then
+    shockwave = not shockwave
+  end
+end
+
 local function WarriorProtCombat()
+  local textToDraw = "Shockwave ON"
+  if (not shockwave) then
+    textToDraw = "Shockwave OFF"
+  end
+  DrawText(Me:GetScreenPosition(), colors.white,textToDraw)
+
+
   local target = Tank.BestTarget
   if not target then return end
 
@@ -116,7 +137,7 @@ local function WarriorProtCombat()
   end
 
   -- Shockwave
-  if shockwaveUnits > 0 and table.length(Tank.PriorityList) / shockwaveUnits > 0.8 and Spell.Shockwave:CastEx(Me) then return end
+  if shockwave and shockwaveUnits > 0 and table.length(Tank.PriorityList) / shockwaveUnits > 0.8 and Spell.Shockwave:CastEx(Me) then return end
 
   -- Shout
   common:DoShout()
