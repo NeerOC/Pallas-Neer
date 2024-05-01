@@ -1,4 +1,5 @@
 local common = require('behaviors.wow_wrath.deathknight.common')
+local colors = require('data.colors')
 local options = {
   Name = "Deathknight (UH)",
   Widgets = {
@@ -25,6 +26,18 @@ local options = {
 
 for k, v in pairs(common.widgets) do
   table.insert(options.Widgets, v)
+end
+
+UnholyListener = wector.FrameScript:CreateListener()
+UnholyListener:RegisterEvent('CHAT_MSG_ADDON')
+
+local useGarg = Settings.GargoyleCD
+function UnholyListener:CHAT_MSG_ADDON(prefix, text, channel, sender, target)
+  if prefix ~= "pallas" then return end
+
+  if text == "useGargoyle" then
+    useGarg = not useGarg
+  end
 end
 
 local function PetAttack(target)
@@ -65,10 +78,11 @@ local function UnholyMulti(target)
     if common:BloodBoil() then return end
     return true
   end
-
-  if common:Pestilence() then return end
-  if common:DeathAndDecay() then return end
-  if common:BloodBoil() then return end
+  if Combat:GetEnemiesWithinDistance(10) > 0 then
+    if common:Pestilence() then return end
+    if common:DeathAndDecay() then return end
+    if common:BloodBoil() then return end
+  end
 end
 
 local GCD = WoWSpell(61304)
@@ -89,7 +103,9 @@ local function UnholyDamage(target)
   -- Death strike will only happen if target has both diseases.
   if common:DeathStrike(target) then return end
 
-  if common:DeathAndDecay() then return end
+  if Combat:GetEnemiesWithinDistance(8) > 0 then
+    Spell.DeathAndDecay:CastEx(target)
+  end
 
   -- Death coil spam if we dont have gargoyle ready or mind freeze is on cooldown for more than 5 sec.
   if (Me.Power > 80 or Spell.SummonGargoyle:CooldownRemaining() > 4000) and Spell.RaiseDead:CooldownRemaining() == 0
@@ -114,7 +130,7 @@ local function UnholyDamage(target)
   -- If it's a mob we want to actually burst on cuz we're lazy or it's a player and we're in pvp
   if (target.Classification == 3 or (target.Classification == 1 and target.Level == 82) or target.IsPlayer) then
     -- We swapping presence to maximize gargoyle damage (It's based on haste.)
-    if Spell.SummonGargoyle:CooldownRemaining() == 0 and not Me:HasVisibleAura(common.auras.unholypresence.Name) and
+    if useGarg and Spell.SummonGargoyle:CooldownRemaining() == 0 and not Me:HasVisibleAura(common.auras.unholypresence.Name) and
         Spell.UnholyPresence:CastEx(Me) then
       return
     end
@@ -122,7 +138,7 @@ local function UnholyDamage(target)
         Spell.BloodPresence:CastEx(Me) then
       return
     end
-    if Settings.GargoyleCD and Me:HasVisibleAura(common.auras.unholypresence.Name) and SummonGargoyle(target) then return end
+    if useGarg and Me:HasVisibleAura(common.auras.unholypresence.Name) and SummonGargoyle(target) then return end
   end
   -- Maybe use pestilence to refresh diseases?
   if common:PestilenceRefresh(target) then return end
@@ -150,6 +166,12 @@ local function UnholyDamage(target)
 end
 
 local function DeathknightUnholy()
+  local textToDraw = "Use Gargoyle ON"
+  if (not useGarg) then
+    textToDraw = "Use Gargoyle OFF"
+  end
+  DrawText(Me:GetScreenPosition(), colors.white,textToDraw)
+
   if Me.IsCastingOrChanneling then return end
   if not Me.InCombat and common:PathOfFrost() then return end
   if Me.IsMounted then return end

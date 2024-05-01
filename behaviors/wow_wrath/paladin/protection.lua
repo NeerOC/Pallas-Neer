@@ -36,7 +36,7 @@ local function PaladinProtCombat()
   if not Me:HasVisibleAura(Spell.RighteousFury.Name) and Spell.RighteousFury:CastEx(Me) then return end
   if not Me:HasVisibleAura(Spell.BlessingOfSanctuary.Name) and
       not Me:HasVisibleAura(Spell.GreaterBlessingOfSanctuary.Name) and Spell.BlessingOfSanctuary:CastEx(Me) then return end
-  if not Me:HasVisibleAura(Spell.SealOfCorruption.Name) and Spell.SealOfCorruption:CastEx(Me) then return end
+  if not Me:HasVisibleAura(Spell.SealOfWisdom.Name) and Spell.SealOfWisdom:CastEx(Me) then return end
 
   local target = Combat.BestTarget
   if not target then return end
