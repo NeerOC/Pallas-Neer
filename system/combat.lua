@@ -12,6 +12,8 @@ Combat.Enemies = 0
 Combat.Incorporeals = {}
 Combat.MirrorImages = {}
 Combat.Totems = {}
+Combat.Casters = {}
+Combat.Draws = {}
 
 Combat.EventListener = wector.FrameScript:CreateListener()
 Combat.EventListener:RegisterEvent("PLAYER_ENTER_COMBAT")
@@ -81,6 +83,8 @@ function Combat:Reset()
   self.Targets = {}
   self.MirrorImages = {}
   self.Totems = {}
+  self.Casters = {}
+  self.Draws = {}
 end
 
 function Combat:WantToRun()
@@ -110,12 +114,20 @@ end
 
 function Combat:ExclusionFilter()
   for k, u in pairs(self.Targets) do
+    if u.Name == "Morchie" then
+      local spell = u.CurrentSpell
+      if spell and spell.Id == 404364 then
+        table.insert(Combat.Draws, u)
+      end
+    end
+
     if not Me:CanAttack(u) then
       self.Targets[k] = nil
     elseif u.EntryId == specialUnits.incorporeal then -- Add to special units, remove from targets
       if u.IsCastingOrChanneling then
         table.insert(self.Incorporeals, u)
       end
+      self.Targets[k] = nil
     elseif u.Name == "Mirror Image" and not u.DeadOrGhost then
       table.insert(self.MirrorImages, u)
       self.Targets[k] = nil
@@ -173,6 +185,10 @@ function Combat:WeighFilter()
 
     if Me:InMeleeRange(u) then
       self.EnemiesInMeleeRange = self.EnemiesInMeleeRange + 1
+    end
+
+    if u:IsCastingFixed() then
+      table.insert(self.Casters, u)
     end
 
     -- our only priority right now, current target

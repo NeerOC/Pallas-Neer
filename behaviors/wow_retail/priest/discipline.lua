@@ -1,340 +1,264 @@
-local common = require("behaviors.wow_retail.priest.common")
-
-local options = {
-  Name = "Priest (Discipline) PVP",
-  Widgets = {
-    {
-      type = "slider",
-      uid = "DiscPowerWordBarrierPct",
-      text = "PW: Barrier (%)",
-      default = 40,
-      min = 0,
-      max = 100
-    },
-    {
-      type = "slider",
-      uid = "DiscPowerWordShieldPct",
-      text = "PW: Shield (%)",
-      default = 80,
-      min = 0,
-      max = 100
-    },
-    {
-      type = "slider",
-      uid = "DiscPowerWordRadiancePct",
-      text = "PW: Radiance (%)",
-      default = 55,
-      min = 0,
-      max = 100
-    },
-    {
-      type = "slider",
-      uid = "DiscPenancePct",
-      text = "Penance (%)",
-      default = 69,
-      min = 0,
-      max = 100
-    },
-    {
-      type = "slider",
-      uid = "DiscFlashHealPct",
-      text = "Flash Heal (%)",
-      default = 75,
-      min = 0,
-      max = 100
-    },
-    {
-      type = "slider",
-      uid = "DiscPainSuppressionPct",
-      text = "Pain Suppression (%)",
-      default = 34,
-      min = 0,
-      max = 100
-    },
-    {
-      type = "slider",
-      uid = "DiscRapturePct",
-      text = "Rapture (%)",
-      default = 38,
-      min = 0,
-      max = 100
-    },
-    {
-      type = "slider",
-      uid = "DiscVoidShift",
-      text = "Void Shift (%)",
-      default = 24,
-      min = 0,
-      max = 100
-    },
-
-  }
-}
-
-for k, v in pairs(common.widgets) do
-  table.insert(options.Widgets, v)
-end
+---@diagnostic disable: undefined-field, duplicate-set-field
+local gui = require("behaviors.wow_retail.priest.discipline-gui")
+local colors = require("data.colors")
 
 local auras = {
-  painSuppression = 33206,
-  powerOfTheDarkSide = 198068,
-  purgeTheWicked = 204213,
-  powerWordShield = 17,
+  atonement = 194384,
+  rapture = 47536,
+  powerwordshield = 17,
+  instantflash = 114255,
+  covenant = 322105,
+  rhapsody = 390636,
+  shadowcov = 322105,
+  purge = 204213
 }
 
-local function PowerWordBarrier(friend)
-  local spell = Spell.PowerWordBarrier
-  if spell:CooldownRemaining() > 0 then return false end
+DiscListener = wector.FrameScript:CreateListener()
+DiscListener:RegisterEvent('CHAT_MSG_ADDON')
 
-  return (friend.HealthPct < Settings.DiscPowerWordBarrierPct or friend:TimeToDeath() < 3) and spell:CastEx(friend)
+local raptureToggle = false
+function DiscListener:CHAT_MSG_ADDON(prefix, text, channel, sender, target)
+  if prefix ~= "pallas" then return end
+
+  if text == "rapture" then
+    raptureToggle = not raptureToggle
+  end
 end
 
+--- Class Spells/Buffs
+local nextBuff = 0
+local function PowerWordFortitude()
+  if Me.InCombat or wector.Game.Time < nextBuff then return end
 
-local function PowerWordShield(friend)
-  local spell = Spell.PowerWordShield
-  if spell:CooldownRemaining() > 0 then return false end
-
-  return friend.HealthPct < Settings.DiscPowerWordShieldPct and (not friend:HasAura(auras.powerWordShield)) and
-      spell:CastEx(friend)
+  for _, friend in pairs(Heal.Friends.All) do
+    if Spell.PowerWordFortitude:Apply(friend) then
+      nextBuff = wector.Game.Time + 5000
+      return true
+    end
+  end
 end
 
-local function PowerWordRadiance(friend)
-  local spell = Spell.PowerWordRadiance
-  if spell:CooldownRemaining() > 0 or spell.Charges < 2 then return false end
-  return friend.HealthPct < Settings.DiscPowerWordRadiancePct and spell:CastEx(friend)
+local function Fade()
+  if Spell.Fade:CooldownRemaining() > 0 then return end
+
+  for _, enemy in pairs(Combat.Targets) do
+    if enemy.Aggro then
+      if Spell.Fade:CastEx(Me) then return end
+    end
+  end
 end
 
-local function PowerWordRadianceOneCharge(friend)
-  local spell = Spell.PowerWordRadiance
-  if spell:CooldownRemaining() > 0 or spell.Charges < 1 then return false end
-  return friend.HealthPct < Settings.DiscPowerWordRadiancePct and spell:CastEx(friend)
+local function HealTrinket(friend)
+  local trink1Pct = Settings.PriestDiscTrinket1Pct
+  local trink2Pct = Settings.PriestDiscTrinket2Pct
+  local trinket1 = WoWItem:GetUsableEquipment(EquipSlot.Trinket1)
+  local trinket2 = WoWItem:GetUsableEquipment(EquipSlot.Trinket2)
+
+  if trink1Pct == 0 and trink2Pct == 0 then return false end
+
+  if trinket1 then
+    if friend.HealthPct < trink1Pct and trinket1:UseX(friend) then return true end
+  end
+
+  if trinket2 then
+    if friend.HealthPct < trink2Pct and trinket2:UseX(friend) then return true end
+  end
 end
 
+local function DesperatePrayer()
+  if Me.HealthPct > 70 then return end
 
-local function Penance(friend)
-  local spell = Spell.Penance
-  if spell:CooldownRemaining() > 0 then return false end
-  return friend.HealthPct < Settings.DiscPenancePct and spell:CastEx(friend)
-end
-
-local function FlashHeal(friend)
-  local spell = Spell.FlashHeal
-  if spell:CooldownRemaining() > 0 then return false end
-  return friend.HealthPct < Settings.DiscFlashHealPct and spell:CastEx(friend)
-end
-
-local function PainSuppression(friend)
-  local spell = Spell.PainSuppression
-  if spell:CooldownRemaining() > 0 or friend:HasAura(auras.painSuppression) then return false end
-  return (friend.HealthPct < Settings.DiscPainSuppressionPct or friend:TimeToDeath() < 2) and spell:CastEx(friend)
-end
-
-local function Rapture(friend)
-  local spell = Spell.Rapture
-  if spell:CooldownRemaining() > 0 or friend:HasAura(auras.painSuppression) then return false end
-  return (friend.HealthPct < Settings.DiscRapturePct or friend:TimeToDeath() < 2) and spell:CastEx(friend)
-end
-
-local function PenanceOffensive(target)
-  local spell = Spell.Penance
-  if spell:CooldownRemaining() > 0 or not Me:HasAura(auras.powerOfTheDarkSide) == nil then return false end
-  return spell:CastEx(target)
+  return Spell.DesperatePrayer:CastEx(Me)
 end
 
 local function PurgeTheWicked(target)
-  local spell = Spell.PurgeTheWicked
-  if spell:CooldownRemaining() > 0 or target:HasAura(auras.purgeTheWicked) then return false end
-  return spell:CastEx(target)
+  if target.Health < Me.HealthMax then return end
+
+  return Spell.PurgeTheWicked:Apply(target)
 end
 
-local function PowerInfusionMyself()
-  local spell = Spell.PowerInfusion
-  if spell:CooldownRemaining() > 0 then return false end
-  return spell:CastEx(Me)
+local function Dispel()
+  return Spell.Purify:Dispel(true, DispelPriority.Low, WoWDispelType.Magic, WoWDispelType.Disease)
 end
 
-local function Schism(target)
-  local spell = Spell.Schism
-  if spell:CooldownRemaining() > 0 then return false end
-  return spell:CastEx(target)
-end
-
-local function PowerWordSolace(target)
-  local spell = Spell.PowerWordSolace
-  if spell:CooldownRemaining() > 0 then return false end
-  return spell:CastEx(target)
-end
-
-local function MindBlast(target)
-  local spell = Spell.MindBlast
-  if spell:CooldownRemaining() > 0 then return false end
-  return spell:CastEx(target)
-end
-
-local function Smite(target)
-  local spell = Spell.Smite
-  if spell:CooldownRemaining() > 0 then return false end
-  return spell:CastEx(target)
-end
-
-local function Dispel(priority)
-  local spell = Spell.Purify
-  if spell:CooldownRemaining() > 0 then return false end
-  spell:Dispel(true, priority or 1, WoWDispelType.Magic)
-end
-
-local function VoidShift(friend)
-  if (friend == Me) then return false end
-  local spell = Spell.VoidShift
-  if spell:CooldownRemaining() > 0 or friend:HasAura(auras.painSuppression) then return false end
-  return (friend.HealthPct < Settings.DiscVoidShift or friend:TimeToDeath() < 2) and spell:CastEx(friend)
-end
-
-local function MassDispel()
-  local spell = Spell.MassDispel
-  if spell:CooldownRemaining() > 0 then return false end
-  for _, enemy in pairs(Combat.Targets) do
-    if enemy:HasAura("Ice Block") or enemy:HasAura("Divine Shield") then
-      if spell:CastEx(enemy) then return true end
-    end
+local function afflicted()
+  for _, affli in pairs(Heal.Afflicted) do
+    DrawLine(Me:GetScreenPosition(), affli:GetScreenPosition(), colors.white, 2)
+    if Spell.Purify:CastEx(affli) then return end
+    --if Spell.Purify:CooldownRemaining() > Spell.Heal.CastTime * 2 and Spell.Heal:CastEx(affli) then return end
   end
-end
-
-local function FlashHealSurgeOfLight(friend)
-  local spell = Spell.FlashHeal
-  if spell:CooldownRemaining() > 0 then return false end
-  return Me:HasAura("Surge of Light") and friend.HealthPct < Settings.DiscFlashHealPct and spell:CastEx(friend)
-end
-
-
--- TODO REVISIT ME
-local function MaintainAtonement()
-  if not Me:InArena() or Me:HasArenaPreparation() then return false end
-
-  local friends = WoWGroup:GetGroupUnits()
-  for _, f in pairs(friends) do
-
-  end
-end
-
-
-local blacklist = {
-  [61305] = "Polymorph (Cat)",
-  [161354] = "Polymorph (Monkey)",
-  [161355] = "Polymorph (Penguin)",
-  [28272] = "Polymorph (Pig)",
-  [161353] = "Polymorph (Polar Bear)",
-  [126819] = "Polymorph (Porcupine)",
-  [61721] = "Polymorph (Rabbit)",
-  [118] = "Polymorph (Sheep)",
-  [61780] = "Polymorph (Turkey)",
-  [28271] = "Polymorph (Turtle)",
-  [211015] = "Hex (Cockroach)",
-  [210873] = "Hex (Compy)",
-  [51514] = "Hex (Frog)",
-  [211010] = "Hex (Snake)",
-  [211004] = "Hex (Spider)",
-}
-
-local function DeathThePoly()
-  for _, t in pairs(Combat.Targets) do
-    if t.IsCastingOrChanneling then
-      local spellInfo = t.SpellInfo
-      local target = wector.Game:GetObjectByGuid(spellInfo.TargetGuid1)
-      if (t.CurrentSpell) then
-        local onBlacklist = blacklist[t.CurrentSpell.Id]
-        if target and target == Me and onBlacklist and Spell.ShadowWordDeath:CastEx(target) then return end
-      end
-    end
-  end
-end
-
-local function PriestDiscDamage()
-  local target = Me.Target
-  if not target then return false end
-
-  -- copy-paste from combat.lua
-  if not Me:CanAttack(target) then
-    return false
-  elseif not target.InCombat or (not Settings.PallasAttackOOC and not target.InCombat) then
-    return false
-  elseif target.Dead or target.Health <= 0 then
-    return false
-  elseif target:GetDistance(Me.ToUnit) > 40 then
-    return false
-  elseif target.IsTapDenied and (not target.Target or target.Target ~= Me) then
-    return false
-  elseif target:IsImmune() then
-    return false
-  end
-
-
-
-  if not target then return false end
-  local lowest = Heal:GetLowestMember()
-  local shouldDPS = not lowest or lowest.HealthPct >= Settings.DiscFlashHealPct
-
-  if not shouldDPS then return false end
-
-  if common:DispelMagic(DispelPriority.Medium) then return end
-
-  if PurgeTheWicked(target) then return true end
-  --if PowerInfusionMyself() then return true end
-  if common:ShadowWordDeath() then return true end
-  if common:Shadowfiend(target) then return true end
-  if Schism(target) then return true end
-  if (target.HealthPct < 50) then
-    if common:Mindgames(target) then return true end
-  end
-  if PenanceOffensive(target) then return true end
-  if common:DispelMagic(DispelPriority.Low) then return end
-  if MindBlast(target) then return true end
-  if Smite(target) then return true end
 end
 
 local function PriestDiscipline()
-  if Me:IsSitting() or Me.IsMounted or Me:IsStunned() then return end
+  if afflicted() then return end
 
-  common:MovementUpdate()
+  if raptureToggle then
+    local textX, textY, textZ = Me.Position.x, Me.Position.y, Me.Position.z + Me.DisplayHeight
+    local screenPos = World2Screen(Vec3(textX, textY, textZ))
+    DrawText(screenPos, colors.teal, "Rapture Time")
+  end
+
+  if Me:IsSitting() or Me:IsCastingFixed() or Me.IsMounted or Me:IsStunned() then return end
+
+  if PowerWordFortitude() then return end
+  if DesperatePrayer() then return end
+  if WoWItem:UseHealthstone() then return end
+  if Fade() then return end
 
   local GCD = wector.SpellBook.GCD
-  if Me.IsCastingOrChanneling or GCD:CooldownRemaining() > 0 then return end
+  if GCD:CooldownRemaining() > 0 then return end
 
-  if common:PowerWordLife() then return end
-  if MassDispel() then return end
-  if common:DesperatePrayer() then return end
-  if WoWItem:UseHealthstone() then return end
-  if DeathThePoly() then return end
+  local tank = Me.FocusTarget
+  if not tank then
+    DrawText(Me:GetScreenPosition(), colors.white, "No Tank")
+  end
 
-  -- BURST HEALING
-  for _, v in pairs(Heal.PriorityList) do
-    local f = v.Unit
+  if Dispel() then return end
 
-    if PainSuppression(f) then return end
-    if Rapture(f) then return end
-    if VoidShift(f) then return end
-    if PowerWordBarrier(f) then return end
-    if PowerWordShield(f) then return end
-    if PowerWordRadiance(f) then return end
-    if FlashHealSurgeOfLight(f) then return end
-    if Dispel(DispelPriority.High) then return end
-    if common:DispelMagic(DispelPriority.High) then return end
-    if Penance(f) then return end
-    if PowerWordRadianceOneCharge(f) then return end
-    if FlashHeal(f) then return end
-    if (f.Class == 3 and f.Pet) then
-      if f.Pet.HealthPct < 75 and PowerWordShield(f.Pet) then return end
-      if f.Pet.HealthPct < 55 and FlashHeal(f.Pet) then return end
+  local enemyCount = table.length(Combat.Targets)
+  local hasInstantFlash = Me:HasAura(auras.instantflash)
+  local radianceTarget
+  local radianceCount = 0
+  local haloHealCount = 0
+  local haloDamageCount = 0
+  local novaHealCount = 0
+  local pwsTarget
+  local penanceTarget
+  local withoutAtonement = 0
+  local noAtonementTarget
+  local flashHealTarget
+  for k, v in pairs(Heal.PriorityList) do
+    local friend = v.Unit
+
+    if friend.InCombat then
+      local hasAtonement = friend:HasAura(auras.atonement)
+
+      if HealTrinket(friend) then return end
+
+      if friend.HealthPct < 70 and not hasAtonement then
+        withoutAtonement = withoutAtonement + 1
+        if not noAtonementTarget then
+          noAtonementTarget = friend
+        end
+      end
+
+      if friend.HealthPct < 99 and Me:GetDistance(friend) < 12 then
+        novaHealCount = novaHealCount + 1
+      end
+
+      if friend.HealthPct < 91 and Me:GetDistance(friend) < 20 and not hasAtonement then
+        radianceCount = radianceCount + 1
+        if not radianceTarget then
+          radianceTarget = friend
+        end
+      end
+
+      if friend.HealthPct < 88 and Me:GetDistance(friend) < 30 then
+        haloHealCount = haloHealCount + 1
+      end
+
+      if friend.HealthPct < 95 and not pwsTarget then
+        pwsTarget = friend
+      end
+
+      if friend.HealthPct < 30 and not penanceTarget then
+        penanceTarget = friend
+      end
+
+      if friend.HealthPct < 70 and not hasAtonement then
+        flashHealTarget = friend
+      end
+
+      if friend.HealthPct < 95 and not hasAtonement and hasInstantFlash then
+        flashHealTarget = friend
+      end
+
+      if friend.HealthPct < 50 and Spell.Penance:CooldownRemaining() > 2000 then
+        flashHealTarget = friend
+      end
+    end
+
+    if enemyCount == 0 and friend.HealthPct < 70 then
+      flashHealTarget = friend
     end
   end
 
+  if raptureToggle and tank and Spell.Rapture:CastEx(tank) then return end
 
+  if raptureToggle then
+    if Spell.Rapture:CooldownRemaining() > 0 and not Me:HasAura(auras.rapture) then
+      raptureToggle = false
+    end
 
-  if Dispel(DispelPriority.Low) then return end
+    for _, friend in pairs(Heal.Friends.All) do
+      if not friend:HasAura(auras.powerwordshield) then
+        if Spell.PowerWordShield:CastEx(friend) then return end
+      end
+    end
+  end
 
-  if MaintainAtonement() then return end
+  local pet = Me.Totems and Me.Totems[1].Name == "Mindbender"
 
-  if PriestDiscDamage() then return end
+  if tank and tank.InCombat and not tank:HasAura(auras.atonement) and Spell.PowerWordShield:CastEx(tank) then return end
+  if withoutAtonement >= 2 and Spell.PowerWordRadiance:CastEx(noAtonementTarget) then return end
+  if radianceCount > 2 and Spell.PowerWordRadiance.Charges == 2 and Spell.PowerWordRadiance:CastEx(radianceTarget) then return end
+  if pwsTarget and Spell.PowerWordShield:CastEx(pwsTarget) then return end
+  if penanceTarget and Spell.Penance:CastEx(penanceTarget) then return end
+  if flashHealTarget and Spell.FlashHeal:CastEx(flashHealTarget) then return end
+
+  local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
+  if not target then return end
+
+  local swdTarget
+  local preShieldTarget
+  local novaDamageCount = 0
+  local totalEnemyHealth = 0
+  local purgeSpread
+
+  for _, enemy in pairs(Combat.Targets) do
+    totalEnemyHealth = totalEnemyHealth + enemy.Health
+
+    if not enemy:HasAura(auras.purge) and not purgeSpread then
+      purgeSpread = enemy
+    end
+
+    if enemy.HealthPct < 20 then
+      swdTarget = enemy
+    end
+
+    if Me:InMeleeRange(enemy) or Me:GetDistance(enemy) < 12 then
+      novaDamageCount = novaDamageCount + 1
+    end
+
+    if Me:InMeleeRange(enemy) or Me:GetDistance(enemy) < 30 then
+      haloDamageCount = haloDamageCount + 1
+    end
+
+    if not preShieldTarget then
+      local eTarget = enemy.Target and enemy.Target.IsPlayer
+      if eTarget and enemy.IsCastingOrChanneling then
+        preShieldTarget = enemy.Target
+      end
+    end
+  end
+
+  if totalEnemyHealth > Me.HealthMax * 10 and not tank or not tank:IsMoving() and Spell.Mindbender:CastEx(target) then return end
+  if PurgeTheWicked(target) then return end
+  if Spell.Penance:CastEx(target) then return end
+  if Spell.DarkReprimand:CastEx(target) then return end
+  if not pet and purgeSpread and PurgeTheWicked(purgeSpread) then return end
+
+  if preShieldTarget and not preShieldTarget:HasAura(auras.powerwordshield) and Spell.PowerWordShield:CastEx(preShieldTarget) then return end
+  if swdTarget and Spell.ShadowWordDeath:CastEx(swdTarget) then return end
+  local rhapsody = Me:GetAura(auras.rhapsody)
+  if rhapsody and rhapsody.Stacks == 20 and novaDamageCount > 0 and novaHealCount > 0 then
+    if Spell.HolyNova:CastEx(Me) then return end
+  end
+  if Me:HasAura(auras.shadowcov) and (haloHealCount >= 2 or haloDamageCount >= 2) and Spell.Halo:CastEx(Me) then return end
+  if Spell.MindBlast:CastEx(target) then return end
+  if swdTarget and Spell.ShadowWordDeath:CastEx(swdTarget) then return end
+  if pet and Spell.ShadowWordDeath:CastEx(target) then return end
+  if Spell.Smite:CastEx(target) then return end
 end
 
 local behaviors = {
@@ -342,4 +266,4 @@ local behaviors = {
   [BehaviorType.Combat] = PriestDiscipline
 }
 
-return { Options = options, Behaviors = behaviors }
+return { Options = gui, Behaviors = behaviors }

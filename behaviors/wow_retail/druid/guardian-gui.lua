@@ -22,6 +22,13 @@ local gui = {
       options = { "Disabled", "Any", "Whitelist" }
     },
     {
+      type = "combobox",
+      uid = "CommonDispels",
+      text = "Dispel",
+      default = 0,
+      options = { "Disabled", "Any", "Whitelist" }
+    },
+    {
       type = "checkbox",
       uid = "DruidMotw",
       text = "Mark of The Wild",
@@ -48,8 +55,16 @@ local gui = {
     },
     {
       type = "slider",
-      uid = "GuardianFRPct",
-      text = "Frenzied Regeneration (%)",
+      uid = "GuardianFR2Pct",
+      text = "Frenzied Regeneration 2 Charge (%)",
+      default = 70,
+      min = 0,
+      max = 100
+    },
+    {
+      type = "slider",
+      uid = "GuardianFR1Pct",
+      text = "Frenzied Regeneration 1 Charge (%)",
       default = 50,
       min = 0,
       max = 100

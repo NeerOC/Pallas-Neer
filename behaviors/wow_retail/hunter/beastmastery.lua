@@ -11,6 +11,7 @@ local options = {
 
 
 local function HunterBeastmasteryCombat()
+  local claw = WoWSpell("Claw")
   local pet = Me.Pet
 
   local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
@@ -19,10 +20,10 @@ local function HunterBeastmasteryCombat()
     return
   end
 
+
+
   if pet then
-    if not pet.Target or pet.Target ~= target then
       Me:PetAttack(target)
-    end
   end
 
   if not Me:IsAutoAttacking() then
@@ -37,9 +38,9 @@ local function HunterBeastmasteryCombat()
     end
   end
 
-  if Spell.HuntersMark:Apply(target) then return end
+  if target.HealthPct > 85 and Spell.HuntersMark:Apply(target) then return end
   if Spell.KillCommand:CastEx(target) then return end
-  if Spell.CobraShot:CastEx(target) then return end
+  if Spell.KillCommand:CooldownRemaining() > 1500 and Spell.CobraShot:CastEx(target) then return end
 end
 
 local behaviors = {

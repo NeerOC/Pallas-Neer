@@ -51,8 +51,18 @@ function Heal:CollectTargets()
   end
 end
 
+local specialUnits = {
+  afflicted = 204773 -- Afflicted Soul, M+ Affix, heal to full or dispel.
+}
+
 function Heal:ExclusionFilter()
   for k, u in pairs(self.HealTargets) do
+
+    if u.EntryId == specialUnits.afflicted then
+      table.insert(self.Afflicted, u)
+      self.HealTargets[k] = nil
+    end
+
     if Me:CanAttack(u) then
       self.HealTargets[k] = nil
     elseif u.DeadOrGhost or u.Health <= 1 then
@@ -68,8 +78,9 @@ end
 function Heal:InclusionFilter()
 end
 
-local specialUnits = {
-  afflicted = 204773 -- Afflicted Soul, M+ Affix, heal to full or dispel.
+local healUnits = {
+  [208459] = true, -- Treants amird
+  [204449] = true, -- chromie
 }
 
 function Heal:WeighFilter()
@@ -83,21 +94,23 @@ function Heal:WeighFilter()
     local isdps = false
     local isheal = false
 
-
-    if u.EntryId == specialUnits.afflicted then
-      table.insert(self.Afflicted, u)
-    end
-
+    local healUnit = healUnits[u.EntryId]
     local member = group:GetMemberByGuid(u.Guid)
-    if not member and Me.Guid ~= u.Guid and target ~= u then goto continue end
+    if not member and Me.Guid ~= u.Guid and target ~= u and not healUnit then goto continue end
 
     if target and target == u then
       priority = priority + 20
     end
 
+    if healUnit then
+      priority = priority + 30
+    end
+
     if member then
       if member.Role & GroupRole.Tank == GroupRole.Tank then
-        priority = priority + 20
+        if u.Class ~= ClassType.DeathKnight then
+          priority = priority + 20
+        end
         istank = true
       end
 

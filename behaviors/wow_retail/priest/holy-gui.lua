@@ -64,9 +64,17 @@ local gui = {
     },
     {
       type = "slider",
-      uid = "PriestHolyWordSerenity",
-      text = "HW: Serenity (%)",
-      default = 50,
+      uid = "PriestHolyWordSerenity2",
+      text = "HW: Serenity 2 Charge (%)",
+      default = 70,
+      min = 0,
+      max = 100
+    },
+    {
+      type = "slider",
+      uid = "PriestHolyWordSerenity1",
+      text = "HW: Serenity 1 Charge (%)",
+      default = 30,
       min = 0,
       max = 100
     },
@@ -217,6 +225,12 @@ local gui = {
       type = "checkbox",
       uid = "PriestHolySpreadMending",
       text = "Spread Mending on CD",
+      default = false
+    },
+    {
+      type = "checkbox",
+      uid = "PriestHolyBursting",
+      text = "Handle Bursting?",
       default = false
     },
   }

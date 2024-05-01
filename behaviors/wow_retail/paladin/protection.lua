@@ -23,6 +23,7 @@ local function PaladinProtCombat()
   if WoWItem:UseHealthstone() then return end
   if sb.handofreckoning() then return end
   if sb.rebuke() then return end
+  if sb.interecession() then return end
   if sb.shieldoftherigtheous() then return end
 
   -- GCD Check
@@ -30,8 +31,8 @@ local function PaladinProtCombat()
   if GCD:CooldownRemaining() > 0 then return end
 
   if sb.devotionaura() then return end
-  if sb.interecession() then return end
 
+  if sb.afflicted() then return end
   if sb.blessingofprotection() then return end
   if sb.stunlogic() then return end
   if sb.defenselogic() then return end

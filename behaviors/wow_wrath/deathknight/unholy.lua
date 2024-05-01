@@ -172,6 +172,10 @@ local function DeathknightUnholy()
   local target = Combat.BestTarget
   if not target then return end
 
+  if not Me:IsAutoAttacking() then
+    Me:StartAttack(target)
+  end
+
   if common:BloodTap() then return end
 
   if Me.Pet then

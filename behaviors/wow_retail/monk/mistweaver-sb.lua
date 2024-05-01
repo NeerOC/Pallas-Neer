@@ -18,6 +18,12 @@ sb.auras = {
   chijibird = 325197
 }
 
+function sb.afflicted()
+  for _, affli in pairs(Heal.Afflicted) do
+    if Spell.Detox:CastEx(affli) then return end
+  end
+end
+
 function sb.mistweavercasting()
   return Me.CurrentSpell and
       (Me.CurrentSpell.Id ~= Spell.SoothingMist.Id)

@@ -104,14 +104,17 @@ local function MonkMistweaver()
   local GCD = wector.SpellBook.GCD
   if GCD:CooldownRemaining() > 0 then return end
 
-  local friend = Heal.PriorityList[1] and Heal.PriorityList[1].Unit
   local targetFriend = Me.Target and not Me:CanAttack(Me.Target) and Me.Target
+
+  if sb.afflicted() then return end
 
   if targetFriend then
     if sb.soothingfriend(targetFriend) then return end
   end
 
-  if friend then
+  for k, v in pairs(Heal.PriorityList) do
+    local friend = v.Unit
+
     if friend.HealthPct > Settings.MistweaverDoNotAoePct then
       if MistweaverAoEHeal(friend) then return end
     end

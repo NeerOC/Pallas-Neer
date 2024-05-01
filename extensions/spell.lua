@@ -100,7 +100,7 @@ function SpellListener:COMBAT_LOG_EVENT_UNFILTERED(entry)
     end
   end
 
-  local latency = Settings.PallasGlobalDelay and 200 or 0
+  local latency = Settings.PallasGlobalDelay and 300 or 0
   globalDelay = wector.Game.Time + latency
 end
 
@@ -123,11 +123,13 @@ local castWhileMove = {
 local losExclude = {
   [44566] = true, -- Ozumat big squid boi
   [98696] = true,
-  [131863] = true -- waycrest
+  [131863] = true, -- waycrest
+  [208478] = true, -- worm raid
 }
 
 local useExclude = {
   [44566] = true, -- Ozumat big squid boi
+  [208478] = true, -- worm raid
 }
 
 function WoWSpell:CastEx(a1, ...)

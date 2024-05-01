@@ -10,6 +10,7 @@ local immunes = {
   heal = {
     57512, -- Insanity
     70405, -- big boi icc
+    27827, -- Spirit form holy
   }
 }
 

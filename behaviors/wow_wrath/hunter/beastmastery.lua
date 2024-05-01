@@ -31,7 +31,7 @@ function TargetListener:COMBAT_LOG_EVENT_UNFILTERED(entry)
 
   if spellID == Spell.ArcaneShot.Id or spellID == Spell.Multishot.Id then
     if not Me:HasAura(Spell.AspectOfTheViper.Id) then
-      Spell.AspectOfTheViper:Cast(Me)
+      --Spell.AspectOfTheViper:Cast(Me)
     end
   end
 end
@@ -55,7 +55,7 @@ end
 local function AspectToggle()
   if table.length(Combat.Targets) > 0 or Me.InCombat then
     local viperOrHawk = Me.PowerPct < 5 and Spell.AspectOfTheViper or
-        (not Me:HasAura(Spell.AspectOfTheViper.Id) or Me.PowerPct > 10) and Spell.AspectOfTheHawk
+        (not Me:HasAura(Spell.AspectOfTheViper.Id) or Me.PowerPct > 50) and Spell.AspectOfTheHawk
 
     return viperOrHawk and viperOrHawk:Apply(Me)
   else

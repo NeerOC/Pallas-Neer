@@ -1,3 +1,4 @@
+---@diagnostic disable: duplicate-set-field
 local colors = require "data.colors"
 local spellbook = {}
 
@@ -11,6 +12,7 @@ sb.auras = {
   audacity = 386270,
   opportunity = 195627,
   adrenalinerush = 13750,
+  loadeddice = 256171,
   dices = {
     broadside = 193356,
     buriedtreasure = 199600,
@@ -18,7 +20,8 @@ sb.auras = {
     ruthprecision = 193357,
     skullandbones = 199603,
     truebearing = 193359
-  }
+  },
+  enraging = 228318
 }
 
 sb.stealthed = false
@@ -28,6 +31,24 @@ sb.broadside = false
 sb.audacity = false
 sb.truebearing = false
 sb.opportunity = false
+
+RogueListener = wector.FrameScript:CreateListener()
+RogueListener:RegisterEvent('CHAT_MSG_ADDON')
+
+local holdCDs = false
+function RogueListener:CHAT_MSG_ADDON(prefix, text, channel, sender, target)
+  if prefix ~= "pallas" then return end
+
+  if text == "hold" then
+    holdCDs = not holdCDs
+  end
+end
+
+function sb.drawhold()
+  if holdCDs then
+    DrawText(Me:GetScreenPosition(), colors.white, "Holding CDs")
+  end
+end
 
 function sb.getAuras()
   sb.stealthed = Me:HasAura(sb.auras.stealth)
@@ -59,6 +80,7 @@ function sb.atrophicpoison()
 end
 
 function sb.adrenalinerush()
+  if holdCDs then return end
   return Me:GetPowerByType(PowerType.ComboPoints) <= 2 and Spell.AdrenalineRush:Apply(Me, nil, true)
 end
 
@@ -110,6 +132,8 @@ end
 
 function sb.rollthebones()
   if Spell.RollTheBones:CooldownRemaining() > 0 then return end
+  local loadedDice = Me:HasAura(sb.auras.loadeddice)
+  local countBelow = 0
 
   local auraCount = 0
   for _, dice in pairs(sb.auras.dices) do
@@ -117,17 +141,33 @@ function sb.rollthebones()
     if aura and aura.Remaining > 2000 then
       auraCount = auraCount + 1
     end
+
+    if aura and aura.Remaining < 2000 then
+      countBelow = countBelow + 1
+    end
   end
 
-  return (auraCount == 0 or auraCount == 1 and not sb.truebearing) and
+  return (auraCount == 0 or auraCount == 1 or auraCount == 2 and loadedDice or countBelow > 1) and
       Spell.RollTheBones:CastEx(Me)
 end
 
 function sb.ghostlystrike(target)
-  return Me:GetPowerByType(PowerType.ComboPoints) < 7 and Spell.GhostlyStrike:CastEx(target)
+  if Spell.GhostlyStrike:CooldownRemaining() > 0 then return end
+  --local trinket = WoWItem:GetUsableEquipment(14)
+  local shouldUse = target.Health > Me.HealthMax * 5 and Me:GetPowerByType(PowerType.ComboPoints) < 7
+
+  --if shouldUse then
+    --if trinket then
+      --trinket:UseX(Me)
+    --end
+
+    return Spell.GhostlyStrike:CastEx(target)
+  --end
 end
 
 function sb.vanishbetween(target)
+  if not Settings.RogueOutlawVanish or holdCDs then return end
+
   if sb.subterfurge or sb.shadowdance then return end
   if Spell.Vanish:CooldownRemaining() > 0 or Spell.BetweenTheEyes:CooldownRemaining() > 0 or Me:GetPowerByType(PowerType.ComboPoints) < 6 then return end
 
@@ -136,7 +176,7 @@ function sb.vanishbetween(target)
 end
 
 function sb.dancebetween(target)
-  if sb.subterfurge then return end
+  if sb.subterfurge or holdCDs then return end
   if Spell.ShadowDance:CooldownRemaining() > 0 or Spell.BetweenTheEyes:CooldownRemaining() > 0 or Me:GetPowerByType(PowerType.ComboPoints) < 6 then return end
 
   Spell.ShadowDance:CastEx(Me)
@@ -146,9 +186,10 @@ end
 function sb.betweentheeyes(target)
   if Me:GetPowerByType(PowerType.ComboPoints) < 5 then return end
   local stealthauras = sb.hasStealthBuff()
-  local cooldownHold = Spell.Vanish:CooldownRemaining() < 45000 or Spell.ShadowDance:CooldownRemaining() < 12000
+  local cooldownHold = (Spell.Vanish:CooldownRemaining() < 45000 and Settings.RogueOutlawVanish) or
+      Spell.ShadowDance:CooldownRemaining() < 12000
 
-  if not stealthauras and cooldownHold then return end
+  if not stealthauras and cooldownHold and not holdCDs then return end
 
   local cp = stealthauras and 5 or 6
 
@@ -262,15 +303,35 @@ local stunSpells = {
   [200630] = true, -- Unnerving Screech
   [253721] = true, -- bulwark of juju
 }
+
+local alreadyStunned = {}
+
 function sb.stunspells()
+  if not Settings.RogueOutlawStunlock then return end
+
   for _, enemy in pairs(Combat.Targets) do
+    local uid = enemy.Guid.Low
+    local stunImmune = enemy:HasAura(sb.auras.enraging)
     local spell = enemy.CurrentSpell
-    if spell and stunSpells[spell.Id] then
+
+    -- Check if the value for uid exists, if not, set it to 0
+    alreadyStunned[uid] = alreadyStunned[uid] or 0
+
+    if not stunImmune and alreadyStunned[uid] < 2 and spell and stunSpells[spell.Id] then
       if Me:IsFacing(enemy) then
-        if Spell.CheapShot:CastEx(enemy) then return end
-        if Spell.KidneyShot:CastEx(enemy) then return end
+        if Spell.CheapShot:CastEx(enemy) then
+          alreadyStunned[uid] = alreadyStunned[uid] + 1
+          return
+        end
+        if Spell.KidneyShot:CastEx(enemy) then
+          alreadyStunned[uid] = alreadyStunned[uid] + 1
+          return
+        end
       end
-      if Spell.Blind:CastEx(enemy) then return end
+      if Spell.Blind:CastEx(enemy) then
+        alreadyStunned[uid] = alreadyStunned[uid] + 1
+        return
+      end
     end
   end
 end

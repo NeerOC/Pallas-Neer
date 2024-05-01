@@ -3,18 +3,6 @@ local sb = require("behaviors.wow_retail.rogue.outlaw-sb")
 local gui = require("behaviors.wow_retail.rogue.outlaw-gui")
 local colors = require("data.colors")
 
-RogueListener = wector.FrameScript:CreateListener()
-RogueListener:RegisterEvent('CHAT_MSG_ADDON')
-
-local fullRotation = true
-function RogueListener:CHAT_MSG_ADDON(prefix, text, channel, sender, target)
-  if prefix ~= "pallas" then return end
-
-  if text == "toggletype" then
-    fullRotation = not fullRotation
-  end
-end
-
 local function RogueOutlawFullRotation(target)
   if sb.bladeflurry() then return end
   if sb.stealth() then return end
@@ -24,9 +12,9 @@ local function RogueOutlawFullRotation(target)
   if sb.dancebetween(target) then return end
   if sb.betweentheeyes(target) then return end
   if sb.sliceanddice() then return end
+  if sb.ambush(target) then return end
   if sb.dispatch(target) then return end
   if sb.pistolshot(target, false) then return end
-  if sb.ambush(target) then return end
   if sb.pistolshot(target, true) then return end
   if sb.sinisterstrike(target) then return end
 end
@@ -55,9 +43,34 @@ local function DebugAuras()
   end
 end
 
+local function DrawCasters()
+  for _, caster in pairs(Combat.Casters) do
+    local spell = caster.CurrentSpell
+    if spell then
+      DrawText(caster:GetScreenPosition(), colors.white, tostring(spell.Id))
+    end
+
+    if caster.Name == "Morchie" then
+      if spell then
+        print(spell.Id)
+      end
+    end
+  end
+end
+
+local function DrawMorchie()
+  for _, draw in pairs(Combat.Draws) do
+    DrawLine(Me:GetScreenPosition(), draw:GetScreenPosition(), colors.teal, 2)
+  end
+end
+
 local function RogueOutlaw()
   --DebugCasts()
   --DebugAuras()
+  --DrawCasters()
+  --DrawMorchie()
+  sb.drawhold()
+
   if Me.IsMounted or Me:IsStunned() or Me:IsSitting() or Me.IsCastingOrChanneling then return end
 
   sb.getAuras()

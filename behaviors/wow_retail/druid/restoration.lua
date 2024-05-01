@@ -1,413 +1,336 @@
-local options = {
-  -- The sub menu name
-  Name = "Druid (Resto)",
-  -- widgets
-  Widgets = {
-    {
-      type = "checkbox",
-      uid = "DruidRestoDPS",
-      text = "Enable DPS",
-      default = false
-    },
-    {
-      type = "checkbox",
-      uid = "DruidRestoEfflorescence",
-      text = "Use Efflorescence (experimental)",
-      default = false
-    },
-    {
-      type = "checkbox",
-      uid = "DruidRestoOvergrowth",
-      text = "Use Overgrowth",
-      default = false
-    },
-    {
-      type = "checkbox",
-      uid = "DruidRestoTranquility",
-      text = "Use Tranquility",
-      default = false
-    },
-    {
-      type = "checkbox",
-      uid = "DruidRestoConvoke",
-      text = "Use Convoke",
-      default = false
-    },
-    {
-      type = "checkbox",
-      uid = "DruidRestoNaturesSwiftness",
-      text = "Use Natures Swiftness",
-      default = false
-    },
-    {
-      type = "checkbox",
-      uid = "DruidInnervate",
-      text = "Use Innervate when mana low (experimental)",
-      default = false
-    },
-    {
-      type = "checkbox",
-      uid = "DruidRestoBarkskin",
-      text = "Use Barkskin",
-      default = false
-    },
-    {
-      type = "slider",
-      uid = "DruidRestoBarkskinPct",
-      text = "Barkskin (self) Percent (%)",
-      default = 34,
-      min = 0,
-      max = 100
-    },
-    {
-      type = "slider",
-      uid = "DruidRestoIronbarkPct",
-      text = "Ironbark Percent (%)",
-      default = 27,
-      min = 0,
-      max = 100
-    },
-    {
-      type = "checkbox",
-      uid = "DruidRestoPvPMode",
-      text = "PVP Enabled - some extra casts",
-      default = false
-    },
-    {
-      type = "combobox",
-      uid = "CommonDispels",
-      text = "Dispel",
-      default = 0,
-      options = { "Disabled", "Any", "Whitelist" }
-    },
-  }
-}
+---@diagnostic disable: undefined-field, duplicate-set-field
+local gui = require("behaviors.wow_retail.druid.restoration-gui")
+local colors = require("data.colors")
 
-local function CalculateNearbyFriendlies(loc, range)
-  local count = 0
+RestoListener = wector.FrameScript:CreateListener()
+RestoListener:RegisterEvent('CHAT_MSG_ADDON')
 
-  local group = WoWGroup(GroupType.Auto)
-  local members = group.Members
-  for _, member in pairs(members) do
-    local unit = wector.Game:GetObjectByGuid(member.Guid)
-    if unit and loc:DistanceSq(unit.Position) < range then
-      count = count + 1
-    end
+local damooge = false
+function RestoListener:CHAT_MSG_ADDON(prefix, text, channel, sender, target)
+  if prefix ~= "pallas" then return end
+
+  if text == "damooge" then
+    damooge = not damooge
   end
-  return count
 end
 
--- XXX: Testing, very buggy right now
-local function CalculateEfflorescencePosition()
-  local range = 40.0
-  local node_size = 5.0
-  local origin = Me.Position
-  origin.z = origin.z + Me.DisplayHeight
-  local best_position = Vec3(0.0, 0.0, 0.0)
-  local best_count = 0
+local auras = {
+  rejuvenation = 774,
+  wildgrowth = 48438,
+  clearcasting = 16870,
+  efflorescence = 207386,
+  rake = 155722,
+  thrash = 405233,
+  motw = 1126
+}
 
-  for x = origin.x - range, origin.x + range, node_size do
-    for y = origin.y - range, origin.y + range, node_size do
-      local from = Vec3(x, y, origin.z)
-      local to = Vec3(x, y, 0.0)
-      local hitflags = TraceLineHitFlags.WmoCollision | TraceLineHitFlags.Terrain
-      ---@diagnostic disable-next-line: param-type-mismatch
-      local intersected, result = wector.World:TraceLineWithResult(from, to, hitflags)
-      if intersected then
-        -- XXX: zdelta is bogus sometimes which screws everything up
-        local zdelta = 5.0 - math.abs(result.Hit.z - origin.z)
-        origin.z = origin.z + zdelta
+local lastGrove = 0
+local function GroveGuardian(friend, level)
+  if wector.Game.Time < lastGrove then return end
+  local groveCharge = Spell.GroveGuardians.Charges
 
-        result.Hit.z = result.Hit.z + 0.1
-        if not wector.World:TraceLine(origin, result.Hit, TraceLineHitFlags.WmoCollision) then
-          -- calculate nearby friendly units
-          local num = CalculateNearbyFriendlies(result.Hit, 10)
-          if num > best_count then
-            best_position = result.Hit
-            best_count = num
+  if (groveCharge < 3 and level == 1) or (groveCharge < 2 and level == 2) then
+    return false
+  end
+
+  if Spell.GroveGuardians:CastEx(friend) then
+    lastGrove = wector.Game.Time + 3500
+    return
+  end
+end
+
+local function DruidRestorationDamage()
+  local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
+  if not target then return end
+
+  local mfTargets = 0
+  local mfTarget = nil
+
+
+  if Me:GetPowerPctByType(PowerType.Mana) > 70 then
+    if Me.ShapeshiftForm ~= ShapeshiftForm.Cat or Me:GetPowerByType(PowerType.Energy) < 30 then
+      if Spell.AdaptiveSwarm:CastEx(target) then return end
+      if Spell.Sunfire:Apply(target) then return end
+
+      for _, enemy in pairs(Combat.Targets) do
+        if enemy:HasDebuffByMe(Spell.Moonfire.Name) then
+          mfTargets = mfTargets + 1
+        else
+          if enemy:TimeToDeath() ~= 9999 and enemy:TimeToDeath() > 12 then
+            mfTarget = enemy
           end
         end
       end
+
+      if mfTarget and mfTargets < 3 and Spell.Moonfire:CastEx(mfTarget) then return end
     end
   end
 
-  return best_position
-end
+  if Spell.Rake:InRange(target) then
+    if Me:GetPowerByType(PowerType.Energy) >= 40 then
+      local rakeTargets = 0
+      local thrashValid = false
+      local rakeEnemy = nil
+      local enemies = Combat:GetEnemiesWithinDistance(10)
 
-local function DruidRestoDamage()
-  local target = Me.Target
-  if not target then return end
-
-  -- copy-paste from combat.lua
-  if not Me:CanAttack(target) then
-    return
-  elseif not target.InCombat or (not Settings.PallasAttackOOC and not target.InCombat) then
-    return
-  elseif target.Dead or target.Health <= 0 then
-    return
-  elseif target:GetDistance(Me.ToUnit) > 40 then
-    return
-  elseif target.IsTapDenied and (not target.Target or target.Target ~= Me) then
-    return
-  elseif target:IsImmune() then
-    return
-  end
-
-  if Me.ShapeshiftForm == ShapeshiftForm.Normal then
-    if Me:InMeleeRange(target) and Me:IsFacing(target) and Spell.CatForm:CastEx(Me) then return end
-  end
-
-  if Me.ShapeshiftForm == ShapeshiftForm.Cat and Me:InMeleeRange(target) and Me:IsFacing(target) then
-    if not target:HasDebuffByMe("Rake") and Spell.Rake:CastEx(target) then return end
-    if not target:HasDebuffByMe("Thrash") and Spell.Thrash:CastEx(target) then return end
-    if Me:GetPowerByType(PowerType.ComboPoints) == 5 then
-      local rip = target:GetAuraByMe("Rip")
-      if not rip and target:TimeToDeath() > 12 and Spell.Rip:CastEx(target) then return end
-      if Spell.FerociousBite:CastEx(target) then return end
-    end
-    if #target:GetUnitsAround(10) > 2 then
-      if Spell.Swipe:CastEx(target) then return end
-    else
-      if Spell.Shred:CastEx(target) then return end
-    end
-  end
-end
-
-local blacklist = {
-  [61305] = "Polymorph (Cat)",
-  [161354] = "Polymorph (Monkey)",
-  [161355] = "Polymorph (Penguin)",
-  [28272] = "Polymorph (Pig)",
-  [161353] = "Polymorph (Polar Bear)",
-  [126819] = "Polymorph (Porcupine)",
-  [61721] = "Polymorph (Rabbit)",
-  [118] = "Polymorph (Sheep)",
-  [61780] = "Polymorph (Turkey)",
-  [28271] = "Polymorph (Turtle)",
-  [211015] = "Hex (Cockroach)",
-  [210873] = "Hex (Compy)",
-  [51514] = "Hex (Frog)",
-  [211010] = "Hex (Snake)",
-  [211004] = "Hex (Spider)",
-}
-
-local function Dispel(priority)
-  local spell = Spell.NaturesCure
-  if spell:CooldownRemaining() > 0 then return false end
-  local types = WoWDispelType
-  spell:Dispel(true, priority or DispelPriority.Low, types.Magic, types.Poison, types.Curse)
-end
-
-
-local function DruidRestoCombat()
-  for _, t in pairs(Combat.Targets) do
-    if t.IsCastingOrChanneling then
-      local spellInfo = t.SpellInfo
-      local target = wector.Game:GetObjectByGuid(spellInfo.TargetGuid1)
-      if (t.CurrentSpell) then
-        local onBlacklist = blacklist[t.CurrentSpell.Id]
-        if target and target == Me and onBlacklist and Me.ShapeshiftForm == ShapeshiftForm.Normal and Spell.BearForm:CastEx(Me) then return end
+      if Me.ShapeshiftForm ~= ShapeshiftForm.Cat then
+        if Spell.CatForm:CastEx(Me) then return end
       end
-    end
-  end
-end
 
-local function FindAdaptiveSwarm()
-  local units = wector.Game:GetObjectsByFlag(ObjectTypeFlag.Unit)
-  for _, v in pairs(units) do
-    local u = v.ToUnit
-    if not u then return false end
-    local aura = u:GetAura("Adaptive Swarm")
-    if aura and aura.HasCaster and aura.Caster == Me.ToUnit then return true end
-  end
-  return false
-end
+      if Me:GetPowerByType(PowerType.ComboPoints) >= 5 and Spell.FerociousBite:CastEx(target) then return end
 
-local efflorescence_time = 0
-local efflorescence_pos = Vec3(0.0, 0.0, 0.0)
+      for _, enemy in pairs(Combat.Targets) do
+        if enemy:HasDebuffByMe(Spell.Rake.Name) then
+          rakeTargets = rakeTargets + 1
+        else
+          if not rakeEnemy then
+            rakeEnemy = enemy
+          end
+        end
 
-local unrootWithEffloTime = 0
-
-
-local function DruidRestoHeal()
-  if Me.Dead then return end
-  if Me:IsStunned() then return end
-  if Me.IsCastingOrChanneling then return end
-  if Me.StandStance == StandStance.Sit then return end
-  if Me.IsMounted then return end
-  if (Me.MovementFlags & MovementFlags.Flying) > 0 then return end
-
-  if Me.ShapeshiftForm == ShapeshiftForm.Bear or
-      Me.ShapeshiftForm == ShapeshiftForm.DireBear then
-    if Settings.DruidRestoPvPMode then
-      if Me.HealthPct < 45 and Spell.FrenziedRegeneration:CastEx(Me) then return end
-    end
-    return
-  end
-
-  if WoWItem:UseHealthstone() then return end
-
-  if Me.ShapeshiftForm ~= ShapeshiftForm.Travel then
-
-  end
-
-  local wildgrowth = false
-  if table.length(Heal.PriorityList) >= 2 then
-    wildgrowth = true
-  end
-
-  if Settings.DruidRestoEfflorescence then
-    -- XXX: Testing, very buggy right now
-    -- XXX: Move efflorescence if new position found with more friendlies
-    -- XXX: Remove time constraint and only rely on how many are inside it
-    -- XXX: Only place efflorescence if there are enemies nearby
-    local time_since_last_efflo = wector.Game.Time - efflorescence_time
-    if wildgrowth and time_since_last_efflo > 15000 then
-      local efflo_pos = CalculateEfflorescencePosition()
-      if efflo_pos.x ~= 0.0 and (efflorescence_pos:DistanceSq(efflo_pos) > 30 or time_since_last_efflo > 15000) then
-        if Spell.Efflorescence:CastEx(efflo_pos) then
-          efflorescence_time = wector.Game.Time
-          efflorescence_pos = efflo_pos
-          return
+        if Spell.Thrash:InRange(enemy) and not enemy:HasAura(auras.thrash) and enemy:TimeToDeath() ~= 9999 and enemy:TimeToDeath() > 12 then
+          thrashValid = true
         end
       end
+      if enemies >= 3 and thrashValid and Spell.Thrash:CastEx(Me) then return end
+      if enemies > 3 and Spell.Swipe:CastEx(Me) then return end
+      if rakeTargets < 3 and rakeEnemy then
+        if Spell.Rake:Apply(rakeEnemy) then return end
+      end
+
+      if enemies > 2 and Spell.Swipe:CastEx(Me) then return end
+      if Spell.Shred:CastEx(target) then return end
+    end
+  else
+    if Combat:GetTargetsAround(target, 8) > 2 and Spell.Starfire:CastEx(target) then return end
+    if Spell.Wrath:CastEx(target) then return end
+  end
+end
+
+local function Barkskin()
+  if Spell.Barkskin:CooldownRemaining() > 0 then return end
+
+  for _, enemy in pairs(Combat.Targets) do
+    local eTarget = enemy.Target
+    if eTarget == Me and enemy.IsCastingOrChanneling or enemy.Aggro and Me:GetDistance(enemy) < 10 then
+      if Spell.Barkskin:CastEx(Me) then return end
     end
   end
+end
 
-  local timeSinceUnRootedWithEfflo = wector.Game.Time - unrootWithEffloTime
+local lastMotw = 0
+local function Motw()
+  if wector.Game.Time < lastMotw then return end
 
-
-  for _, v in pairs(Heal.PriorityList) do
-    ---@type WoWUnit
-    local u = v.Unit
-    local prio = v.Priority
-
-    -- TODO convoke and tranq logic need to take into account Multiple people low
-    if Settings.DruidRestoOvergrowth and u.HealthPct < 40 and Spell.Overgrowth:CastEx(u) then return end
-
-    if Settings.DruidRestoNaturesSwiftness and u.HealthPct < 25 and Spell.NaturesSwiftness:CastEx(Me) then return end
-    -- Dont need to check natures swiftness settings, if you cast it, i'll try use it
-    if u.HealthPct < 50 and Me:GetVisibleAura(132158) and Spell.Regrowth:CastEx(u) then return end
-
-    if u.HealthPct < 50 and Spell.CenarionWard:CastEx(u) then return end
-    if u.HealthPct < 50 and (u:HasBuffByMe("Rejuvenation") or u:HasBuffByMe("Regrowth")) and
-        Spell.Swiftmend:CastEx(u, SpellCastExFlags.NoUsable) then
-      return
-    end
-
-    -- TODO fix innervate, but if you trigger the CD. GG
-    if Settings.DruidInnervate and Me:GetPowerPctByType(PowerType.Mana) < 25 and Spell.Innervate:CastEx(Me) then return end
-
-    -- fix ugly
-    if Me.ShapeshiftForm == ShapeshiftForm.Cat then
-      if u.HealthPct < 80 and not u:HasBuffByMe("Rejuvenation") and Spell.Rejuvenation:CastEx(u) then return end
-    else
-      if u.HealthPct < 92 and not u:HasBuffByMe("Rejuvenation") and Spell.Rejuvenation:CastEx(u) then return end
-    end
-
-
-    if u.HealthPct < Settings.DruidRestoIronbarkPct and Spell.Ironbark:CastEx(u) then return end
-
-    if Dispel(DispelPriority.High) then return end
-
-    if Settings.DruidRestoBarkskin and Me.HealthPct < Settings.DruidRestoBarkskinPct and Spell.Barkskin:CastEx(Me) then return end
-
-
-    -- Some PVP stuff, do heals prepared for tanks below
-    if Settings.DruidRestoPvPMode then
-      if u.HealthPct < 60 and u:GetAuraByMe("Rejuvenation") and u:GetAuraByMe("Rejuvenation").Remaining < 3000
-          and u:GetAuraByMe("Lifebloom") and u:GetAuraByMe("Lifebloom").Remaining < 3000
-          and Spell.Invigorate:CastEx(u) then
+  for _, friend in pairs(Heal.Friends.All) do
+    if not friend:HasAura(auras.motw) then
+      if Spell.MarkOfTheWild:CastEx(friend) then
+        lastMotw = wector.Game.Time + 5000
         return
       end
-      if u.HealthPct < 60 and Spell.AdaptiveSwarm:CastEx(u) then return end
-      if u.HealthPct < 65 and not u:GetAuraByMe("Lifebloom") and Spell.Lifebloom:CastEx(u) then return end
-      if u.HealthPct < 80 and Spell.Thorns.IsKnown and Spell.Thorns:CastEx(u) then return end
     end
+  end
+end
 
-    if Dispel(DispelPriority.Medium) then return end
+local lastEfflo = 0
+local function Efflorescence()
+  if lastEfflo > wector.Game.Time then return end
+  local tank = Me.FocusTarget or Heal.Friends.Tanks[1]
 
+  if not tank then return end
 
-    if Spell.Regrowth:Apply(u, u.HealthPct < 70) then return end
-    if u.HealthPct < 75 and wildgrowth and Spell.WildGrowth:CastEx(u) then return end
+  if tank.InCombat and not tank:IsMoving() and not tank:HasAura(auras.efflorescence) and Spell.Efflorescence:CastEx(tank) then
+    lastEfflo = wector.Game.Time + 5000
+    return
+  end
+end
 
+local stunSpells = {
+  [429176] = true, -- Aquablast
+  [200345] = true, -- Arrow Barrage
+  [225562] = true, -- Blood Metamorphosis
+  [225963] = true, -- Bloodthirsty Leap
+  [172578] = true, -- Bounding Whirl
+  [201139] = true, -- Brutal Assault
+  [164965] = true, -- Choking Vines
+  [413606] = true, -- Corroding Volley
+  [225573] = true, -- Dark Mending
+  [201400] = true, -- Dread Inferno
+  [253583] = true, -- Fiery Enchant
+  [411300] = true, -- Fish Bolt Volley
+  [201061] = true, -- Frenzy Potion
+  [164887] = true, -- Healing Waters
+  [76813] = true,  -- Healing Wave
+  [76820] = true,  -- Hex
+  [278444] = true, -- Infest
+  [200291] = true, -- Knife Dance
+  [253517] = true, -- Mending Word
+  [265346] = true, -- Pallid Glare
+  [198904] = true, -- Poison Spear
+  [427376] = true, -- Poisoned Spear
+  [426905] = true, -- Psionic Pulse
+  [271175] = true, -- Ravaging Leap
+  [214002] = true, -- Raven's Dive
+  [412233] = true, -- Rocket Bolt Volley
+  [200105] = true, -- Sacrifice Soul
+  [407120] = true, -- Serrated Axe
+  [264390] = true, -- Spellbind
+  [200658] = true, -- Star Shower
+  [411958] = true, -- Stonebolt
+  [412044] = true, -- Temposlice
+  [255041] = true, -- Terrifying Screech
+  [260666] = true, -- Transfusion
+  [200630] = true, -- Unnerving Screech
+  [253721] = true, -- bulwark of juju
+}
+local function IncapRoar()
+  if Spell.IncapacitatingRoar:CooldownRemaining() > 0 then return end
 
-    -- Max level uses Nourish as filler, low level uses Regrowth
-    if Spell.Nourish.IsKnown then
-      if u.HealthPct < 70 and
-          (u:HasBuffByMe("Rejuvenation") or u:HasBuffByMe("Regrowth") or u:HasBuffByMe("Wild Growth") or
-          u:HasBuffByMe("Lifebloom")) and Spell.Nourish:CastEx(u) then
-        return
+  for _, enemy in pairs(Combat.Targets) do
+    local spell = enemy.CurrentSpell
+    if (spell and stunSpells[spell.Id] and not enemy.IsInterruptible) then
+      if Me:GetDistance(enemy) < 12 then
+        if Spell.IncapacitatingRoar:CastEx(Me) then return end
       end
-    else
-      if u.HealthPct < 70 and (not u:HasBuffByMe("Regrowth") or u.HealthPct < 60) and Spell.Regrowth:CastEx(u) then return end
-    end
-
-    if u:IsRooted() and timeSinceUnRootedWithEfflo > 5000 then
-       if Spell.Efflorescence:CastEx(u) then unrootWithEffloTime = wector.Game.Time
-       return end
-   end
-
-    if (u.Class == 3 and u.Pet) then
-      Spell.Rejuvenation:Apply(u.Pet, u.Pet.HealthPct < 99)
-      Spell.Lifebloom:Apply(u.Pet, u.Pet.HealthPct < 50)
-    end
-
-  end
-
-
-  --[[
-  for _, v in pairs(Heal.PriorityList) do
-    ---@type WoWUnit
-    local unit = v.Unit
-    local auras = unit.VisibleAuras
-    for _, aura in pairs(auras) do
-      if aura.DispelType ==
     end
   end
-  ]]
-  for _, u in pairs(Heal.Friends.Tanks) do
-    ---@type WoWUnit
+end
 
-    -- this is a mess but works
-    if Me.ShapeshiftForm == ShapeshiftForm.Cat and u.HealthPct > 80 then goto continue end
+local function Afflicted()
+  for _, affli in pairs(Heal.Afflicted) do
+    if Spell.NaturesCure:CastEx(affli) then return end
+  end
+end
 
-    local lifebloom = u:GetAuraByMe("Lifebloom")
-    if not lifebloom and Spell.Lifebloom:CastEx(u) then return end
+local function Dispel()
+  if Spell.NaturesCure:CooldownRemaining() > 0 then return end
 
-    if not FindAdaptiveSwarm() and Spell.AdaptiveSwarm:CastEx(u) then return end
-    --if lifebloom and u.InCombat then
-    --  if u.HealthPct < 90 and lifebloom.Stacks < 1 and Spell.Lifebloom:CastEx(u) then return end
-    --  if u.HealthPct < 80 and lifebloom.Stacks < 2 and Spell.Lifebloom:CastEx(u) then return end
-    --  if u.HealthPct < 70 and lifebloom.Stacks < 3 and Spell.Lifebloom:CastEx(u) then return end
-    --  --if lifebloom.Remaining < 2500 and u.HealthPct > 70 and Spell.Lifebloom:CastEx(u) then return end
-    --end
-    ::continue::
+  return Spell.NaturesCure:Dispel(true, DispelPriority.Low, WoWDispelType.Poison, WoWDispelType.Magic,
+    WoWDispelType.Curse)
+end
+
+local function Soothe()
+  if Spell.Soothe:CooldownRemaining() > 0 then return end
+
+  return Spell.Soothe:Dispel(false, DispelPriority.Low, WoWDispelType.Enrage)
+end
+
+local function DruidRestoration()
+  if Me:IsSitting() or Me:IsStunned() or Me:IsCastingFixed() or Me.IsMounted then return end
+
+  if damooge then
+    DrawText(Me:GetScreenPosition(), colors.white, "DAMOOGE")
   end
 
-  if Dispel(DispelPriority.Low) then return end
+  local tank = Me.FocusTarget or Heal.Friends.Tanks[1]
+  local lowest = Heal:GetLowestMember()
+  local clearCasting = Me:HasAura(auras.clearcasting)
 
+  if not Me.InCombat then
+    Motw()
+  end
 
+  if lowest and lowest.HealthPct < 50 then
+    if damooge then
+      damooge = false
+    end
 
-  if Settings.DruidRestoPvPMode and Me.ShapeshiftForm == ShapeshiftForm.Normal and Me:InArena() and not Me:HasArenaPreparation() then
-    -- do lifebloom and rejuv while doing nothing
-    local friends = WoWGroup:GetGroupUnits()
-    for _, f in pairs(friends) do
-      if Spell.Rejuvenation:Apply(f, f ~= Me) then return end
-      if Spell.Lifebloom:Apply(f, f ~= Me) then return end
+    Spell.NaturesSwiftness:CastEx(Me)
+  end
+
+  if Barkskin() then return end
+  if Me.InCombat and Me.HealthPct < 65 and Spell.Renewal:CastEx(Me) then return end
+
+  if Me.ShapeshiftForm == ShapeshiftForm.Travel then return end
+
+  local GCD = wector.SpellBook.GCD
+  if GCD:CooldownRemaining() > 0 then return end
+
+  if Afflicted() then return end
+  if IncapRoar() then return end
+  if Dispel() then return end
+  if Soothe() then return end
+
+  if damooge then
+    DruidRestorationDamage()
+  end
+
+  local growthCount = 0
+  local groveCount = 0
+  local flourishCount = 0
+  local groveCritical = 0
+  local vokeCount = 0
+
+  for k, v in pairs(Heal.PriorityList) do
+    local friend = v.Unit
+
+    if friend.HealthPct < 70 then
+      vokeCount = vokeCount + 1
+    end
+
+    if friend.HealthPct < 60 then
+      groveCritical = groveCritical + 1
+    end
+
+    if friend.HealthPct < 85 then
+      growthCount = growthCount + 1
+    end
+
+    if friend.HealthPct < 80 then
+      groveCount = groveCount + 1
+    end
+
+    if friend.HealthPct < 80 and friend:HasAura(auras.rejuvenation) and friend:HasAura(auras.wildgrowth) then
+      flourishCount = flourishCount + 1
     end
   end
 
-
-  if Settings.DruidRestoDPS then
-    DruidRestoDamage()
+  if vokeCount >= 3 and Spell.ConvokeTheSpirits:CastEx(lowest) then return end
+  if groveCritical > 2 and GroveGuardian(lowest, 3) then return end
+  if flourishCount >= 2 and Spell.Flourish:CastEx(Me) then return end
+  if groveCount >= 2 and GroveGuardian(lowest, 2) then return end
+  if growthCount >= 3 then
+    Spell.Innervate:CastEx(Me)
+    if Spell.WildGrowth:CastEx(Me) then return end
   end
+
+  for k, v in pairs(Heal.PriorityList) do
+    local friend = v.Unit
+    local fhpct = friend.HealthPct
+
+    if friend:HasAura(auras.rejuvenation) then
+      fhpct = fhpct + 10
+    end
+
+    if fhpct < 99 and Spell.AdaptiveSwarm:Apply(friend) then return end
+    if fhpct < 90 and Spell.Rejuvenation:Apply(friend) then return end
+    if fhpct < 75 and GroveGuardian(friend, 1) then return end
+    if fhpct < 90 and clearCasting and Spell.Regrowth:CastEx(friend) then return end
+    if fhpct < 70 and Spell.Swiftmend:CastEx(friend, SpellCastExFlags.NoUsable) then return end
+    if fhpct < 70 and Spell.Regrowth:CastEx(friend) then return end
+  end
+
+  if Spell.Lifebloom:Apply(Me) then return end
+
+  if tank then
+    local target = Me.Target
+    local thpct = tank.HealthPct
+    if target and target == tank then
+      if Spell.Ironbark:CastEx(tank) then return end
+    end
+    if Spell.Lifebloom:Apply(tank) then return end
+    if thpct < 95 and tank.InCombat and Spell.CenarionWard:CastEx(tank) then return end
+  end
+
+  if Efflorescence() then return end
+
+  if DruidRestorationDamage() then return end
 end
 
 return {
-  Options = options,
+  Options = gui,
   Behaviors = {
-    [BehaviorType.Combat] = DruidRestoCombat,
-    [BehaviorType.Heal] = DruidRestoHeal,
+    [BehaviorType.Combat] = DruidRestoration,
+    [BehaviorType.Heal] = DruidRestoration,
   }
 }

@@ -121,6 +121,12 @@ end
 function sb.HealingStreamTotem(target)
   if Spell.HealingStreamTotem:CooldownRemaining() > 0 then return false end
 
+  for _, totem in pairs(Me.Totems) do
+    if totem.Name == "Healing Stream Totem" then
+      return
+    end
+  end
+
   if target.HealthPct < Settings.ShamanRestoHealingStreamTotem then
     return Spell.HealingStreamTotem:CastEx(Me)
   end
@@ -222,68 +228,6 @@ local function CalculateTotemPosition()
   return bestPosition
 end
 
-function sb.SpiritLinkTotem(target)
-  local healthThreshold = Settings.ShamanRestoSpiritLinkTotem
-
-  if target.HealthPct > healthThreshold then
-    return false -- Target's health is above the threshold, no action needed
-  end
-
-  local pulseRadius = 10
-  local edgeExtraRange = 1 -- Additional range beyond the pulsing radius
-
-  local origin = CalculateTotemPosition()
-  local bestPos
-  local maxFriendCount = -1
-  local foundFriend = false -- Flag to track if a nearby friend is found
-
-  for _, friend in pairs(Heal.Friends.All) do
-    if friend ~= target then
-      local memberX, memberY, memberZ = friend.Position.x, friend.Position.y, friend.Position.z
-
-      local distanceToPlayer = math.sqrt((origin.x - target.Position.x) ^ 2 + (origin.y - target.Position.y) ^ 2 + (origin.z - target.Position.z) ^ 2)
-      local distanceToMember = math.sqrt((origin.x - memberX) ^ 2 + (origin.y - memberY) ^ 2 + (origin.z - memberZ) ^ 2)
-      local effectiveRange = pulseRadius + edgeExtraRange
-
-      if distanceToPlayer <= effectiveRange and distanceToMember <= effectiveRange then
-        local friendCount = CalculateNearbyFriendlies(origin, 11) -- Assuming CalculateNearbyFriendlies uses the origin and range of 11
-
-        if friendCount > maxFriendCount then
-          maxFriendCount = friendCount
-          bestPos = origin
-        end
-
-        foundFriend = true
-      end
-    end
-  end
-
-  if foundFriend and bestPos and maxFriendCount >= 1 then
-    -- Cast Spirit Link Totem at the best position
-    return Spell.SpiritLinkTotem:CastEx(bestPos)
-  end
-
-  return false -- No valid placement found or no good friends, no action taken
-end
-
---[[
-function sb.SpiritLinkTotem(target)
-  if target.HealthPct > Settings.ShamanRestoSpiritLinkTotem then return false end
-
-  local goodfriends = 0
-
-  for _, friend in pairs(Heal.Friends.All) do
-    if friend ~= target then
-      if target:GetDistance(friend) < 11 and friend.HealthPct > target.HealthPct then
-        goodfriends = goodfriends + 1
-      end
-    end
-  end
-
-  return goodfriends > 0 and Spell.SpiritLinkTotem:CastEx(target)
-end
---]]
-
 function sb.ChainHeal()
   if not Me:HasAura(sb.auras.tidalwaves) then return false end
   local range = Me:HasAura(sb.auras.tidebringer) and 60 or 12
@@ -328,7 +272,7 @@ function sb.LavaBurst(target)
 end
 
 function sb.ChainLightning(target)
-  if Combat:GetTargetsAround(target, 15) < 2 then return false end
+  if Combat:GetTargetsAround(target, 10) < 2 then return false end
 
   if Settings.ShamanRestoStormkeeper then
     Spell.Stormkeeper:CastEx(Me)

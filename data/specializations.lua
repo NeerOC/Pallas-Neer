@@ -150,6 +150,9 @@ elseif wector.CurrentScript.Game == 'wow_retail' then
       [72] = 'Fury',
       [73] = 'Protection',
       [1446] = 'Initial'
-    }
+    },
+    plunderboi = {
+      [1478] = 'Plunderstorm'
+    },
   }
 end

@@ -177,7 +177,6 @@ local function ShamanRestoration()
   for k, v in pairs(Heal.PriorityList) do
     local friend = v.Unit
 
-    if sb.SpiritLinkTotem(friend) then return end
     if sb.UnleashLife(friend) then return end
     if sb.HealingSurge(friend) then return end
     if sb.Riptide(friend) then return end

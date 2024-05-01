@@ -33,6 +33,18 @@ local gui = {
       text = "Interrupt with Kidney Shot",
       default = false
     },
+    {
+      type = "checkbox",
+      uid = "RogueOutlawVanish",
+      text = "Vanish",
+      default = false
+    },
+    {
+      type = "checkbox",
+      uid = "RogueOutlawStunlock",
+      text = "Stunlock M+",
+      default = false
+    },
   }
 }
 

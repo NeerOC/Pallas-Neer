@@ -98,6 +98,9 @@ local dispels = {
   [59746] = DispelPriority.Low,  -- Heal debuff
   [59359] = DispelPriority.Low,  -- Poison sit
   [56785] = DispelPriority.Low,  -- Disease
+  [70426] = DispelPriority.Low, -- Disease ICC
+  [70409] = DispelPriority.Low, -- Fireball ICC
+  [70408] = DispelPriority.Low, -- Amplify ICC
 
   -- Dragonflight --
 
@@ -117,7 +120,6 @@ local dispels = {
   [197546] = DispelPriority.Low, -- Brutal Glaive
   [200084] = DispelPriority.Low, -- Soul Blade
   [194960] = DispelPriority.Low, -- Soul Echoes
-  [225909] = DispelPriority.Low, -- Soul Venom
 
   -- Darkheart Thicket
   [196376] = DispelPriority.Low, -- Grievous Tear
@@ -134,7 +136,6 @@ local dispels = {
   [412285] = DispelPriority.Low, -- Stonebolt
   [412044] = DispelPriority.Low, -- Temposlice
   [413547] = DispelPriority.Low, -- Bloom
-  [415554] = DispelPriority.Low, -- Chronoburst
   [416716] = DispelPriority.Low, -- Sheared Lifespan
   [411994] = DispelPriority.Low, -- Chronomelt
 

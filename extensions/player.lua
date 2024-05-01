@@ -101,5 +101,5 @@ function WoWActivePlayer:GetSpellTarget()
 end
 
 function WoWActivePlayer:IsAutoAttacking()
-  return Me.Target and (Spell.AutoAttack.IsActive or Spell.AutoShot.IsAutoRepeat)
+  return Me.Target and (Spell.AutoAttack.IsActive or Spell.AutoShot.IsKnown and Spell.AutoShot.IsAutoRepeat)
 end

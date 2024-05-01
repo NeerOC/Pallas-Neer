@@ -3,6 +3,7 @@ local sb = require("behaviors.wow_retail.druid.guardian-sb")
 
 local function DruidGuardian()
   if Me.IsMounted or Me.IsCastingOrChanneling or Me:IsStunned() then return false end
+  if Me.ShapeshiftForm ~= ShapeshiftForm.Bear then return end
 
   -- General
   if sb.markofthewild() then return end
@@ -13,14 +14,22 @@ local function DruidGuardian()
   if sb.ironfur() then return end
   if sb.docRegrowth() then return end
 
-  -- Interrupt
-  if Spell.SkullBash:Interrupt() then return end
-
   -- Offensive
   local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
   if not target then return false end
 
+  -- Interrupt
+  if Me:InMeleeRange(target) and Spell.SkullBash:Interrupt() then return end
 
+  if not Me:IsAutoAttacking() then
+    Me:ToggleAttack()
+  end
+
+  local GCD = wector.SpellBook.GCD
+  if GCD:CooldownRemaining() > 0 then return end
+
+  if sb.afflicted() then return end
+  if sb.removecorruption() then return end
   if sb.thrash() then return end
   if sb.moonfire(target, true) then return end -- add aoe threat check
   if sb.maul(target) then return end

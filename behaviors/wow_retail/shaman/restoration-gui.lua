@@ -47,14 +47,6 @@ local gui = {
       max = 100
     },
     {
-      type = "slider",
-      uid = "ShamanRestoSpiritLinkTotem",
-      text = "Spirit Link Totem (%)",
-      default = 30,
-      min = 0,
-      max = 100
-    },
-    {
       type = "text",
       uid = "ShamanRestoAoE",
       text = "----------------A--O--E-------------------",

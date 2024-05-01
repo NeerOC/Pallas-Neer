@@ -1,104 +1,127 @@
-local common = require('behaviors.wow_retail.demonhunter.common')
+local gui = require("behaviors.wow_retail.demonhunter.vengeance-gui")
 
-local options = {
-  -- The sub menu name
-  Name = "Demonhunter (Vengeance)",
-  -- widgets  TODO
-  Widgets = {
-  }
+local auras = {
+  soulfragments = 203981,
+  frailty = 247456
 }
 
-for k, v in pairs(common.widgets) do
-  table.insert(options.Widgets, v)
-end
+local nextEly = 0
+local function ElysianDecree(target)
+  if target:IsMoving() then return end
+  if nextEly > wector.Game.Time then
+    return
+  end
 
-local function TheHunt(target)
-  local frailtyAura = target:GetAura("Frailty")
-  if frailtyAura and frailtyAura.Stacks > 2 and Spell.TheHunt:CastEx(target) then return true end
-end
-
-local function SoulCarver(target)
-  local frailtyAura = target:GetAura("Frailty")
-  if frailtyAura and frailtyAura.Stacks > 3 and Spell.SoulCarver:CastEx(target) then return true end
-end
-
-local function FelDevastation(target)
-  if Me.Power >= 50 and Spell.FelDevastation:CastEx(target) then return true end
-end
-
-local function SoulCleave(target)
-  if Me.Power > 70 and Spell.SoulCleave:CastEx(target) then return true end
-end
-
-local function DemonSpikes()
-  -- todo revisit me charges is nil
-  if Me.HealthPct < 55 and Spell.DemonSpikes.Charges > 0 and not Me:GetVisibleAura("Demon Spikes") then
-    if Spell.DemonSpikes:CastEx() then return true end
+  if Spell.ElysianDecree:CastEx(target) then
+    nextEly = wector.Game.Time + 4000
   end
 end
 
-local function FieryBrand(target)
-  if Me.HealthPct < 40 then
-    if Spell.FieryBrand:CastEx(target) then return true end
+local function Incorporeal()
+  for _, incorp in pairs(Combat.Incorporeals) do
+    if Me:IsFacing(incorp) and Spell.Imprison:CastEx(incorp) then return end
+    if Spell.Imprison:CooldownRemaining() > 0 and Spell.SigilOfMisery:CastEx(incorp) then return end
   end
 end
-
-local function SpiritBomb()
-  local soulFragmentAura = Me:GetVisibleAura("Soul Fragments")
-  if soulFragmentAura and soulFragmentAura.Stacks > 2 and Me.Power >= 40 then
-    if Spell.SpiritBomb:CastEx(Me) then return true end
-  end
-end
-
--- Also casts Shear if Fracture is not known
-local function Fracture(target)
-  if Spell.Fracture.IsKnown then
-    if Spell.Fracture:CastEx(target) then return true end
-  else
-    if Spell.Shear:CastEx(target) then return true end
-  end
-end
-
 
 local function DemonhunterVengeanceCombat()
+  if Me:IsSitting() or Me.IsMounted or Me:IsCastingFixed() then return end
+
+  local fragments = Me:GetAura(auras.soulfragments)
+  local fragStacks = fragments and fragments.Stacks or 0
+  local enemies10 = 0
+  local interruptibles = {}
+  local silenceTarget
+  local imprisonTarget
+  local totalHealth = 0
+  local bigBois = 0
+  local biggestBoi
+  local glaiveAggro
+  local furthestBoi
+
+  for _, enemy in pairs(Combat.Targets) do
+    totalHealth = totalHealth + enemy.Health
+
+    local distance = Me:GetDistance(enemy)
+
+    if Me:IsFacing(enemy) and enemy.Health > Me.HealthMax * 2 and (not furthestBoi or Me:GetDistance(furthestBoi) < distance) then
+      furthestBoi = enemy
+    end
+
+    if not biggestBoi or enemy.Health > biggestBoi.Health then
+      biggestBoi = enemy
+    end
+
+    if Me:IsFacing(enemy) and not enemy.Aggro then
+      glaiveAggro = enemy
+    end
+
+    if enemy.Health > Me.HealthMax * 1.5 and Me:InMeleeRange(enemy) then
+      bigBois = bigBois + 1
+    end
+
+    if enemy.Target and enemy.Target.IsPlayer and enemy.Target ~= Me and not enemy.Aggro and not enemy.IsCastingOrChanneling then
+      if Spell.Torment:CastEx(enemy) then Alert("Taunted!", 2) end
+    end
+
+    if Me:InMeleeRange(enemy) or Me:GetDistance(enemy) < 10 then
+      enemies10 = enemies10 + 1
+    end
+
+    if enemy:IsCastingFixed() and enemy.IsInterruptible then
+      if Spell.Disrupt:InRange(enemy) and Spell.Disrupt:CastEx(enemy) then Alert("Interrupt", 2) end
+      if Spell.Imprison:InRange(enemy) then imprisonTarget = enemy end
+      table.insert(interruptibles, enemy)
+    end
+  end
+
+
+  if table.length(interruptibles) > 1 then
+    local otherKickable
+    for _, kickable in pairs(interruptibles) do
+      if not otherKickable then
+        otherKickable = kickable
+        goto continue
+      end
+
+      if kickable:InMeleeRange(otherKickable) or kickable:GetDistance(otherKickable) < 16 then
+        silenceTarget = kickable
+      end
+
+      ::continue::
+    end
+  end
+
+  if WoWItem:UseHealthstone() then Alert("Healthstone", 2) end
+  if (bigBois > 0 or totalHealth > Me.HealthMax * 3) and enemies10 > 0 and Spell.DemonSpikes.Charges == 2 and Spell.DemonSpikes:CastEx(Me) then
+    Alert("Defensive", 2) end
+
   if wector.SpellBook.GCD:CooldownRemaining() > 0 then return end
 
-  local target = Combat.BestTarget
+
+  if Incorporeal() then return end
+  if silenceTarget and Spell.SigilOfSilence:CastEx(silenceTarget) then return end
+  --if imprisonTarget and Spell.Imprison:CastEx(imprisonTarget) then return end
+  if enemies10 > 0 and fragStacks >= 4 and Spell.SpiritBomb:CastEx(Me) then return end
+  if enemies10 > 0 and Spell.ImmolationAura:CastEx(Me) then return end
+
+  local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
   if not target then return end
-  if Me.IsCastingOrChanneling then return end
-  if common:DoInterrupt() then return end
 
+  if totalHealth > Me.HealthMax * 3 and Spell.FieryBrand:CastEx(biggestBoi) then return end
+  if not Me:IsMoving() and furthestBoi and totalHealth > Me.HealthMax * 3 and Spell.TheHunt:CastEx(furthestBoi) then return end
+  if not Me:IsMoving() and fragStacks <= 2 and ElysianDecree(target) then return end
+  if not Me:IsMoving() and not target:IsMoving() and Spell.SigilOfFlame:CastEx(target) then return end
+  if fragStacks == 0 and Me.Power >= 50 and Spell.SoulCleave:CastEx(target) then return end
+  if Spell.Fracture:CastEx(target) then return end
+  if Me:InMeleeRange(target) and Spell.Felblade:CastEx(target) then return end
 
-  if DemonSpikes() then return end
-  if TheHunt(target) then return end
-
-  if not Me:InMeleeRange(target) and Me:IsFacing(target) then
-    if common:ThrowGlaive(target) then return end
-  end
-
-  -- only melee spells from here on
-  if not Me:InMeleeRange(target) or not Me:IsFacing(target) then return end
-
-  if FieryBrand(target) then return end
-  -- -- todo optional infernalStrike
-  if SpiritBomb() then return end
-  if common:ImmolationAura() then return end
-  if FelDevastation(target) then return end
-  if SoulCarver(target) then return end
-
-  if Combat.EnemiesInMeleeRange > 1 then
-    if common:UseTrinkets() then return end
-  end
-
-   if SoulCleave(target) then return end
-  if common:SigilOfFlame(target) then return end
-  if Fracture(target) then return end
-  if common:ThrowGlaive(target) then return end
-  if common:ArcaneTorrent() then return end
+  if glaiveAggro and Spell.ThrowGlaive:CastEx(glaiveAggro) then return end
+  if Spell.ThrowGlaive:CastEx(target) then return end
 end
 
 local behaviors = {
   [BehaviorType.Combat] = DemonhunterVengeanceCombat
 }
 
-return { Options = options, Behaviors = behaviors }
+return { Options = gui, Behaviors = behaviors }

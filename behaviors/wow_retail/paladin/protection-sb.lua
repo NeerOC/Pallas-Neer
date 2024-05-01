@@ -1,3 +1,4 @@
+local colors = require "data.colors"
 ---@diagnostic disable: duplicate-set-field
 local spellbook = {}
 
@@ -11,7 +12,9 @@ sb.auras = {
   guardianofancientkings = 86659,
   judgment = 197277,
   bulkwarkfury = 386652,
-  shieldofrighteous = 132403
+  shieldofrighteous = 132403,
+  empoweredcons = 424622,
+  devotionaura = 465
 }
 
 ProtListener = wector.FrameScript:CreateListener()
@@ -52,11 +55,11 @@ function sb.getdamagetakenlastseconds(seconds)
 end
 
 function sb.devotionaura()
-  return Spell.DevotionAura:Apply(Me)
+  return not Me:HasAura(sb.auras.devotionaura) and Spell.DevotionAura:CastEx(Me)
 end
 
 function sb.consecration(filler)
-  return (not Me:HasAura(sb.auras.consecration) or filler) and Combat:GetEnemiesWithinDistance(8) > 0 and
+  return (not Me:HasAura(sb.auras.consecration) or filler and not Me:HasAura(sb.auras.empoweredcons)) and Combat:GetEnemiesWithinDistance(8) > 0 and
       Spell.Consecration:CastEx(Me)
 end
 
@@ -111,7 +114,12 @@ function sb.wordofglory()
 end
 
 function sb.layonhands()
-  return Me.HealthPct < 20 and Spell.LayOnHands:CastEx(Me)
+  if Me.HealthPct < 20 and Spell.LayOnHands:CastEx(Me) then return end
+
+  for k, v in pairs(Heal.PriorityList) do
+    local friend = v.Unit
+    if friend.HealthPct < 15 and Spell.LayOnHands:CastEx(friend) then return end
+  end
 end
 
 function sb.avengersshield(target, aoe)
@@ -151,10 +159,10 @@ end
 function sb.handofreckoning()
   if Spell.HandOfReckoning:CooldownRemaining() > 0 or table.length(Heal.Friends.All) < 2 then return end
 
-  local rangeOverride = Spell.Judgment:CooldownRemaining() > 0 and Spell.AvengersShield:CooldownRemaining() > 0
-
   for _, enemy in pairs(Combat.Targets) do
-    if not enemy.Aggro and enemy.Target and enemy.Target ~= Me and (not Me:IsFacing(enemy) or rangeOverride) then
+    local validUnit = enemy.Target and enemy.Target.IsPlayer and enemy.Target ~= Me and not enemy.Aggro and
+    not enemy.IsCastingOrChanneling
+    if validUnit then
       if Spell.HandOfReckoning:CastEx(enemy) then return end
     end
   end
@@ -251,6 +259,13 @@ local stunSpells = {
 local stunEnemies = {
   [131009] = true, -- Spirit of gold atal
 }
+
+function sb.afflicted()
+  for _, affli in pairs(Heal.Afflicted) do
+    DrawLine(Me:GetScreenPosition(), affli:GetScreenPosition(), colors.white, 2)
+    if Spell.CleanseToxins:CastEx(affli) then return end
+  end
+end
 
 function sb.stunlogic()
   for _, enemy in pairs(Combat.Targets) do

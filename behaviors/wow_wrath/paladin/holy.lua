@@ -2,6 +2,7 @@
 local common = require('behaviors.wow_wrath.paladin.common')
 local sb = require('behaviors.wow_wrath.paladin.holy-sb')
 local gui = require('behaviors.wow_wrath.paladin.holy-gui')
+local colors = require('data.colors')
 
 local function BeaconLogic()
   local tank = sb:gettank()
@@ -40,6 +41,17 @@ local function PaladinHolyDPS()
   if sb.shieldofrighteousness(target) then return true end
 end
 
+local function DrawAuras()
+  local target = Me.Target
+  if not target then return end
+
+  for _, aura in pairs(target.Auras) do
+    if aura.IsDebuff then
+      DrawText(Me:GetScreenPosition(), colors.white, "Type: " .. aura.DispelType .. ", Name: " .. aura.Name)
+    end
+  end
+end
+
 local function debugSpell()
   local target = Me.Target
   if not target then return end
@@ -57,6 +69,13 @@ local function debugSpell()
 end
 
 local function PaladinHolyHeal()
+  --DrawAuras()
+
+  local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
+  if target and not Me:IsAutoAttacking() then
+    Me:ToggleAttack()
+  end
+
   if sb.handleoverheal() then return end
   if sb.handleimages() then return end
   if sb.handleinterrupt() then return end
@@ -65,7 +84,7 @@ local function PaladinHolyHeal()
 
   if Me.IsCastingOrChanneling or Me:IsStunned() or Me:IsSitting() then return end
 
-  if common:DoAura() then return end
+  --if common:DoAura() then return end
 
   if Me.IsMounted or wector.SpellBook.GCD:CooldownRemaining() > 0 then return end
 
@@ -73,7 +92,7 @@ local function PaladinHolyHeal()
   if not Me.InCombat then
     common:DoSeal()
     --common:DoBuff()
-    common:DoRF()
+    --common:DoRF()
   end
 
   WoWItem:UseHealthstone()
@@ -97,7 +116,7 @@ local function PaladinHolyHeal()
   if sb.cleanse() then return end
   if sb.flashhot() then return end
   if sb.prehealcast() then return end
-  if sb.handofsalvation() then return end
+  --if sb.handofsalvation() then return end
   if sb.handoffreedom() then return end
   if sb.redemption() then return end
 
