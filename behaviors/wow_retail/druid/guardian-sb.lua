@@ -7,11 +7,24 @@ sb.auras = {
   motw = 1126,
   dreamofcenarius = 372152,
   toothandclaw = 135286,
-  frenziedregeneration = 22842
+  frenziedregeneration = 22842,
+  wardofsalvation = 444622,
+  incarnation = 102558
 }
 
 function sb.markofthewild()
   return Settings.DruidMotw and not Me:HasAura(sb.auras.motw) and Spell.MarkOfTheWild:CastEx(Me)
+end
+
+function sb.wardofsalvation()
+  if Me:HasAura(sb.auras.wardofsalvation) then
+    return Spell.FrenziedRegeneration:Apply(Me)
+  end
+
+  if Me:HasAura(sb.auras.incarnation) then
+    Spell.RageOfTheSleeper:CastEx(Me)
+    return Spell.WardOfSalvation:CastEx(Me)
+  end
 end
 
 function sb.barkskin()
@@ -22,7 +35,7 @@ function sb.barkskin()
 end
 
 function sb.ironfur()
-  return Combat:GetEnemiesWithinDistance(10) > 0 and Spell.Ironfur:CastEx(Me)
+  return Combat:GetEnemiesWithinDistance(10) > 0 and Me.Power > 50 and Spell.Ironfur:CastEx(Me)
 end
 
 function sb.frenziedregeneration()
@@ -34,7 +47,7 @@ function sb.frenziedregeneration()
   local healthPct = Me.HealthPct
 
   if (healthPct < Settings.GuardianFR2Pct and charges == 2) or
-      (healthPct < Settings.GuardianFR1Pct and charges == 1) then
+      (healthPct < Settings.GuardianFR1Pct and charges == 1) or Settings.DruidGuardianSpamFrenized and Combat:GetEnemiesWithinDistance(8) > 0 then
     if Spell.FrenziedRegeneration:CastEx(Me) then
       return
     end
@@ -57,7 +70,7 @@ function sb.growl()
 end
 
 function sb.mangle(target)
-  return Spell.Mangle:CastEx(target)
+  return Combat:GetEnemiesWithinDistance(8) < 3 and Spell.Mangle:CastEx(target)
 end
 
 function sb.thrash()

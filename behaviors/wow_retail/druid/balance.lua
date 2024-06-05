@@ -79,58 +79,99 @@ local function Tag()
     if (table.contains(enemies, id) or tagany) and not unit.IsTapDenied and not dotted and validUnit then
       if Me:WithinLineOfSight(unit) then
         Me:SetTarget(unit)
-        if Spell.Moonfire:CastEx(unit) then
+        if Spell.Sunfire:CastEx(unit) then
           return
         end
+        return
       end
     end
     ::continue::
   end
+
+  if not Me:HasAura(191034) or Me:GetPowerByType(PowerType.LunarPower) >= 90 then
+    Spell.Starfall:CastEx(Me)
+    return
+  end
 end
 
-local function DruidFeralDamage()
+local travelForm = false
+local function TirelessPursuit()
+  if not Me:IsMoving() then return end
+
+  if Me.InCombat or not travelForm then
+    if Spell.StampedingRoar:CastEx(Me) then return end
+    if not Me:HasAura(Spell.StampedingRoar.Name) then
+      Spell.TigerDash:CastEx(Me)
+    end
+
+    if not Me:HasAura(393897) then
+      if not Me:HasAura(768) then
+        Spell.CatForm:CastEx(Me)
+      end
+    end
+  else
+    if Spell.TravelForm:Apply(Me) then return end
+  end
+end
+
+local function CraftGems()
+  local items = wector.Game.Items
+
+  if Me.IsCastingOrChanneling then return end
+
+  for _, item in pairs(items) do
+    local name = item.Name
+    local gem = string.find(name, "Chipped") or string.find(name, "Flawed")
+
+    if gem and item.Count >= 3 then
+      item:Use(Me.ToUnit)
+      return
+    end
+  end
+end
+
+local function DruidBalance()
+  if CraftGems() then return end
+
   if Me:IsCastingFixed() then return end
-  if wector.SpellBook.GCD:CooldownRemaining() > 0 then return end
+
+  if Me.HealthPct < 60 and Spell.Regrowth:CastEx(Me) then return end
 
   if Spell.MarkOfTheWild:Apply(Me) then return end
 
   if tagging then
-    if Me:GetPowerByType(PowerType.Energy) < 100 and Spell.TigersFury:CastEx(Me) then return end
+    DrawText(World2Screen(Vec3(Me.Position.x, Me.Position.y + 0.1, Me.Position.z + 10.5)), colors.yellow,
+      "Tagging Enabled")
     Tag()
+    --TirelessPursuit()
     return
   end
+
+  if wector.SpellBook.GCD:CooldownRemaining() > 0 then return end
 
   local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
   if not target then return end
 
-  if not Me:IsAutoAttacking() then
-    Me:ToggleAttack()
+  if Me:HasAura(102560) or Me:HasAura(194223) then
+    Spell.TirelessSpirit:CastEx(Me)
   end
 
-  if not Me:InMeleeRange(target) and Me:GetDistance(target) > 9 then return end
-
-  if not Me:HasAura("Tiger's Fury") or Me:GetPowerByType(PowerType.Energy) < 50 then
-    print(Me:GetPowerByType(PowerType.Energy))
-    Spell.TigersFury:CastEx(Me)
-  end
-  if Spell.AdaptiveSwarm:CastEx(target) then return end
-  if Me:HasAura("Tiger's Fury") and Spell.ConvokeTheSpirits:CastEx(target) then return end
-  if Me:HasAura(391882) and Spell.FerociousBite:CastEx(target) then return end
-  if Me:GetPowerByType(PowerType.ComboPoints) > 4 then
-    if Combat:GetEnemiesWithinDistance(8) > 0 then
-      if Spell.PrimalWrath:CastEx(target) then return end
-    end
-  end
-  if Me:GetPowerByType(PowerType.ComboPoints) == 0 and Spell.FeralFrenzy:CastEx(target) then return end
-  if Spell.BrutalSlash:CastEx(target) then return end
-  if Spell.Thrash:Apply(target) then return end
-  if Spell.Rake:Apply(target) then return end
-  if Combat:GetEnemiesWithinDistance(8) > 1 and Spell.Swipe:CastEx(Me) then return end
-  if Spell.Shred:CastEx(target) then return end
+  if not tagging and Spell.MoonkinForm:Apply(Me) then return end
+  if Spell.Sunfire:Apply(target) then return end
+  if Spell.Moonfire:Apply(target) then return end
+  if Combat.Enemies > 2 and Spell.Starfall:CastEx(Me) then return end
+  if Combat.Enemies <= 2 and Spell.Starsurge:CastEx(target) then return end
+  if Spell.NewMoon:CastEx(target) then return end
+  if Spell.HalfMoon:CastEx(target) then return end
+  if Spell.FullMoon:CastEx(target) then return end
+  if Spell.FuryOfElune:CastEx(target) then return end
+  if Me:HasAura("Eclipse (Lunar)") and Spell.Starfire:CastEx(target) then return end
+  if Spell.Wrath:CastEx(target) then return end
+  if Spell.Moonfire:CastEx(target) then return end
 end
 
 return {
   Behaviors = {
-    [BehaviorType.Combat] = DruidFeralDamage,
+    [BehaviorType.Combat] = DruidBalance,
   }
 }

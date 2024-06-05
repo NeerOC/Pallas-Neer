@@ -177,6 +177,32 @@ local treasures = {
   [187367] = "treasure", -- Winterfin Clam
   -- Emerald Dream
   [411465] = "treasure", -- Unwaking Echo
+  -- MoP Remix
+  [214945] = "treasure", -- Onyx Egg
+  [213180] = "treasure", -- Guo-Lai runestone
+  [218772] = "treasure", -- Golden Treasure
+  [4] = "treasure", -- GG
+  [5] = "treasure", -- GG
+  [6] = "treasure", -- GG
+  [7] = "treasure", -- GG
+  [8] = "treasure", -- GG
+  [9] = "treasure", -- GG
+  [10] = "treasure", -- GG
+  [11] = "treasure", -- GG
+  [12] = "treasure", -- GG
+  [13] = "treasure", -- GG
+  [14] = "treasure", -- GG
+  [15] = "treasure", -- GG
+  [16] = "treasure", -- GG
+  [17] = "treasure", -- GG
+  [18] = "treasure", -- GG
+  [19] = "treasure", -- GG
+  [20] = "treasure", -- GG
+  [21] = "treasure", -- GG
+  [22] = "treasure", -- GG
+  [23] = "treasure", -- GG
+  [24] = "treasure", -- GG
+  [25] = "treasure", -- GG
 }
 
 return { herb = herbs, ore = ores, treasure = treasures }

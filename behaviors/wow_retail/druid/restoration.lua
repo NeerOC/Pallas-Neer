@@ -21,7 +21,8 @@ local auras = {
   efflorescence = 207386,
   rake = 155722,
   thrash = 405233,
-  motw = 1126
+  motw = 1126,
+  wardofsalvation = 444622
 }
 
 local lastGrove = 0
@@ -40,6 +41,7 @@ local function GroveGuardian(friend, level)
 end
 
 local function DruidRestorationDamage()
+  if not Settings.DruidRestoDamage then return end
   local target = Me.Target and Me:CanAttack(Me.Target) and Combat.BestTarget
   if not target then return end
 
@@ -77,6 +79,7 @@ local function DruidRestorationDamage()
         if Spell.CatForm:CastEx(Me) then return end
       end
 
+      if Me:GetPowerByType(PowerType.ComboPoints) >= 5 and Spell.Rip:Apply(target) then return end
       if Me:GetPowerByType(PowerType.ComboPoints) >= 5 and Spell.FerociousBite:CastEx(target) then return end
 
       for _, enemy in pairs(Combat.Targets) do
@@ -215,6 +218,24 @@ local function Soothe()
   return Spell.Soothe:Dispel(false, DispelPriority.Low, WoWDispelType.Enrage)
 end
 
+local nextLoot = 0
+local function OpenGems()
+  local items = wector.Game.Items
+
+  if wector.Game.Time < nextLoot then
+    return
+  end
+
+  for _, item in pairs(items) do
+    local name = item.Name
+    if name == "Asynchronized Prismatic Gem" then
+      item:Use(Me.ToUnit)
+    end
+  end
+
+  nextLoot = wector.Game.Time + 2000
+end
+
 local function DruidRestoration()
   if Me:IsSitting() or Me:IsStunned() or Me:IsCastingFixed() or Me.IsMounted then return end
 
@@ -251,8 +272,17 @@ local function DruidRestoration()
   if Dispel() then return end
   if Soothe() then return end
 
-  if damooge then
+  if damooge and Settings.DruidRestoDamage then
     DruidRestorationDamage()
+  end
+
+  if tank and tank.InCombat then
+    local target = Me.Target
+    if target and target == tank then
+      if Spell.WardOfSalvation:CastEx(tank) then return end
+      if Spell.Ironbark:CastEx(tank) then return end
+      if Spell.CenarionWard:CastEx(tank) then return end
+    end
   end
 
   local growthCount = 0
@@ -298,26 +328,25 @@ local function DruidRestoration()
     local friend = v.Unit
     local fhpct = friend.HealthPct
 
-    if friend:HasAura(auras.rejuvenation) then
-      fhpct = fhpct + 10
+    if friend:HasAura(auras.wardofsalvation) then
+      fhpct = fhpct - 99
+      Spell.IncarnationTreeOfLife:CastEx(Me)
+      Spell.GroveGuardians:CastEx(friend)
+      Spell.NaturesSwiftness:CastEx(Me)
     end
 
-    if fhpct < 99 and Spell.AdaptiveSwarm:Apply(friend) then return end
+    if Spell.AdaptiveSwarm:Apply(friend) then return end
     if fhpct < 90 and Spell.Rejuvenation:Apply(friend) then return end
     if fhpct < 75 and GroveGuardian(friend, 1) then return end
-    if fhpct < 90 and clearCasting and Spell.Regrowth:CastEx(friend) then return end
     if fhpct < 70 and Spell.Swiftmend:CastEx(friend, SpellCastExFlags.NoUsable) then return end
+    if fhpct < 90 and clearCasting and Spell.Regrowth:CastEx(friend) then return end
     if fhpct < 70 and Spell.Regrowth:CastEx(friend) then return end
   end
 
   if Spell.Lifebloom:Apply(Me) then return end
 
   if tank then
-    local target = Me.Target
     local thpct = tank.HealthPct
-    if target and target == tank then
-      if Spell.Ironbark:CastEx(tank) then return end
-    end
     if Spell.Lifebloom:Apply(tank) then return end
     if thpct < 95 and tank.InCombat and Spell.CenarionWard:CastEx(tank) then return end
   end

@@ -41,6 +41,12 @@ local gui = {
       default = false
     },
     {
+      type = "checkbox",
+      uid = "DruidGuardianSpamFrenized",
+      text = "Spam Frenzied Regeneration",
+      default = false
+    },
+    {
       type = "text",
       uid = "DruidGuardianDefensives",
       text = "Defensives",

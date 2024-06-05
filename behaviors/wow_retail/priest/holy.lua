@@ -3,6 +3,31 @@ local gui = require("behaviors.wow_retail.priest.holy-gui")
 local sb = require("behaviors.wow_retail.priest.holy-sb")
 local colors = require("data.colors")
 
+local nextFind = 0
+local function FindTarget()
+  if wector.Game.Time < nextFind then return end
+  local units = wector.Game.Units
+  for _, unit in pairs(units) do
+    local dotted = unit:GetAura(589)
+    if unit.Level > 1 and unit.Health > 0 and Me:CanAttack(unit) and not dotted then
+      if Me:WithinLineOfSight(unit) then
+        Me:SetTarget(unit)
+        if string.find(unit.Name, "Summoner") and Me:GetDistance(unit) > 12 then
+          if Spell.HolyWordChastise:CastEx(unit) then return end
+          if Spell.HolyFire:CastEx(unit) then return end
+          if Spell.ShadowWordDeath:CastEx(unit) then return end
+          if Spell.Smite:CastEx(unit) then return end
+        else
+          if Spell.ShadowWordPain:CastEx(unit) then return end
+        end
+        nextFind = wector.Game.Time + 100
+      end
+    end
+  end
+
+  if Combat.Enemies > 0 and Spell.HolyNova:CastEx(Me) then return end
+end
+
 local function PriestHolyAOE(friend)
   if sb.holynova() then return end
 
@@ -90,6 +115,11 @@ end
 local function PriestHoly()
   --DebugDraw()
   --DebugAuras()
+  local GCD = wector.SpellBook.GCD
+  if GCD:CooldownRemaining() > 0 then return end
+  FindTarget()
+
+  if true then return end
 
   if Me:IsSitting() or Me.IsMounted or Me:IsStunned() then return end
 

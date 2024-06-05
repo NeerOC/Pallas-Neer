@@ -1,3 +1,4 @@
+local colors = require "data.colors"
 local gametype = wector.CurrentScript.Game
 local options = {
   Name = "Autoloot",
@@ -22,6 +23,12 @@ local options = {
       default = false
     },
     {
+      type = "checkbox",
+      uid = "ExtraIgnoreEnemies",
+      text = "Loot in proximity",
+      default = false
+    },
+    {
       type = "slider",
       uid = "LootCacheReset",
       text = gametype == "wow_wrath" and "Cache Reset (MS)" or "Pulse Time (MS)",
@@ -43,8 +50,12 @@ local function GetLootableUnit()
   for _, u in pairs(units) do
     local lootable = u.IsLootable
     local skinnable = (u.UnitFlags & UnitFlags.Skinnable) > 0
-    local inrange = Me:InInteractRange(u)
+    local inrange = Me:InMeleeRange(u) or Me:GetDistance(u) < 6 or Me:InInteractRange(u)
     local valid = u and u.Dead
+
+    if lootable and inrange then
+      DrawLine(Me:GetScreenPosition(), u:GetScreenPosition(), colors.teal, 3)
+    end
 
     if valid and inrange and lootable then
       return u
@@ -64,7 +75,7 @@ local function Autoloot()
 
   local units = wector.Game.Units
 
-  if Me:IsMoving() or Me.IsCastingOrChanneling or (#Me:GetUnitsAround(10) > 0 and Me.InCombat) or
+  if Me:IsMoving() or Me:IsCastingFixed() or (#Me:GetUnitsAround(10) > 0 and Me.InCombat and not Settings.ExtraIgnoreEnemies) or
       Me.IsMounted then
     return
   end

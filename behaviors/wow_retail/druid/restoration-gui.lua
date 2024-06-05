@@ -8,6 +8,12 @@ local gui = {
       default = 0,
       options = { "Disabled", "Any", "Whitelist" }
     },
+    {
+      type = "checkbox",
+      uid = "DruidRestoDamage",
+      text = "Damage Rotation",
+      default = false
+    },
   }
 }
 

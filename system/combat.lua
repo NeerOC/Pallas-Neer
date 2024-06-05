@@ -240,11 +240,11 @@ end
 
 ---@return number count Amount of mobs that are within the distance you provided.
 ---@param dist number Range from myself to check for enemies
-function Combat:GetEnemiesWithinDistance(dist)
+function Combat:GetEnemiesWithinDistance(dist, facing, angle)
   local count = 0
 
   for _, u in pairs(self.Targets) do
-    if Me:GetDistance(u) <= dist or Me:InMeleeRange(u) then
+    if Me:GetDistance(u) <= dist or Me:InMeleeRange(u) and (not facing or Me:IsFacing(u, angle)) then
       count = count + 1
     end
   end

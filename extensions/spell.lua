@@ -125,6 +125,9 @@ local losExclude = {
   [98696] = true,
   [131863] = true, -- waycrest
   [208478] = true, -- worm raid
+  [56754] = true, -- Serpent mop
+  [71543] = true, -- Immerseus
+  [63191] = true, -- big boi
 }
 
 local useExclude = {

@@ -25,6 +25,8 @@ function Behavior:Initialize(isReload)
   local specid = self:DecideBestSpecialization()
   local specname = behavior_map[class_trim:lower()][specid]
 
+  print("Current Spec ID: " .. specid)
+
   -- remove spaces and makes it all lower-case
   local specname_trim = specname:gsub("%s+", "")
   specname_trim = specname_trim:lower()
@@ -35,6 +37,8 @@ function Behavior:Initialize(isReload)
 
   print('Initialize Behaviors')
 
+
+
   -- reset behaviors
   for k, v in pairs(BehaviorType) do
     self[v] = {}
@@ -43,14 +47,19 @@ function Behavior:Initialize(isReload)
   print('Load ' .. specname .. ' ' .. classname .. ' Behaviors')
   local behavior = require('behaviors.' .. wector.CurrentScript.Game .. '.' .. class_trim .. '.' .. specname_trim)
 
+
   if behavior.Options then
     Menu:AddOptionMenu(behavior.Options)
   end
+
+
 
   self:AddBehaviorFunction(behavior.Behaviors, BehaviorType.Heal)
   self:AddBehaviorFunction(behavior.Behaviors, BehaviorType.Combat)
   self:AddBehaviorFunction(behavior.Behaviors, BehaviorType.Tank)
   self:AddBehaviorFunction(behavior.Behaviors, BehaviorType.Rest)
+
+
 
   -- extra stuff
   local autoloot = require('extra.autoloot')

@@ -41,6 +41,10 @@ function Spell:UpdateCache()
       goto continue
     end
 
+    if spell.Slot < 0 then
+      goto continue
+    end
+
     local key = fmtSpellKey(spell.Name)
     if not Spell.Cache[key] or Spell.Cache[key].Rank < spell.Rank then
       Spell.Cache[key] = WoWSpell(spell.Id)
@@ -53,6 +57,10 @@ function Spell:UpdateCache()
   local pet_spells = wector.SpellBook.PetSpells
   for _, spell in pairs(pet_spells) do
     if spell.IsPassive or spell.IsTradeskill then
+      goto continue
+    end
+
+    if spell.Slot < 0 then
       goto continue
     end
 

@@ -15,7 +15,7 @@ if wector.CurrentScript.Game == 'wow_wrath' then
     hunter = {
       [361] = 'Beast Mastery',
       [363] = 'Marksmanship',
-      [362] = 'Survival'
+      [809] = 'Survival'
     },
 
     mage = {
@@ -31,7 +31,7 @@ if wector.CurrentScript.Game == 'wow_wrath' then
     },
 
     priest = {
-      [201] = 'Discipline',
+      [760] = 'Discipline',
       [202] = 'Holy',
       [203] = 'Shadow'
     },
@@ -55,7 +55,7 @@ if wector.CurrentScript.Game == 'wow_wrath' then
     },
 
     warrior = {
-      [161] = 'Arms',
+      [746] = 'Arms',
       [164] = 'Fury',
       [163] = 'Protection'
     }
