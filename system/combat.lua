@@ -114,13 +114,6 @@ end
 
 function Combat:ExclusionFilter()
   for k, u in pairs(self.Targets) do
-    if u.Name == "Morchie" then
-      local spell = u.CurrentSpell
-      if spell and spell.Id == 404364 then
-        table.insert(Combat.Draws, u)
-      end
-    end
-
     if not Me:CanAttack(u) then
       self.Targets[k] = nil
     elseif u.EntryId == specialUnits.incorporeal then -- Add to special units, remove from targets
@@ -286,21 +279,20 @@ end
 ---@param distance integer The distance in yards from each other that the targets have to be.
 function Combat:AllTargetsGathered(distance)
   if table.length(self.Targets) <= 1 then
-    return true  -- If there's only one or zero targets, consider them gathered.
+    return true -- If there's only one or zero targets, consider them gathered.
   end
 
   for _, target in pairs(self.Targets) do
     if not target.IsCastingOrChanneling then
       for _, otarget in pairs(self.Targets) do
         if target ~= otarget and (otarget:GetDistance(target) > distance and not Me:InMeleeRange(target)) then
-          return false  -- If any pair of targets is not gathered, return false.
+          return false -- If any pair of targets is not gathered, return false.
         end
       end
     end
   end
 
-  return true  -- If all pairs of targets are gathered, return true.
+  return true -- If all pairs of targets are gathered, return true.
 end
-
 
 return Combat

@@ -89,19 +89,20 @@ function SpellListener:COMBAT_LOG_EVENT_UNFILTERED(entry)
   if entry.Source.Name ~= Me.NameUnsafe then return end
 
   local spellID = entry.Args[1]
+  local currentSpell = WoWSpell(spellID)
   if is_queue_spell then
-    local spell = WoWSpell(spellID)
-
     for k, q in pairs(queue) do
-      if q.ability == spell or q.ability.OverrideId == spell.Id then
+      if q.ability == currentSpell or q.ability.OverrideId == currentSpell.Id then
         table.remove(queue, k)
         is_queue_spell = false
       end
     end
   end
 
-  local latency = Settings.PallasGlobalDelay and 300 or 0
-  globalDelay = wector.Game.Time + latency
+  if Spell.Cache[currentSpell.Name] then
+    local latency = Settings.PallasGlobalDelay and 300 or 0
+    globalDelay = wector.Game.Time + latency
+  end
 end
 
 ---@type table All these spells have 0 cast time but can not be used while moving, most likely a channeled spell.
@@ -121,17 +122,17 @@ local castWhileMove = {
 }
 
 local losExclude = {
-  [44566] = true, -- Ozumat big squid boi
+  [44566] = true,  -- Ozumat big squid boi
   [98696] = true,
   [131863] = true, -- waycrest
   [208478] = true, -- worm raid
-  [56754] = true, -- Serpent mop
-  [71543] = true, -- Immerseus
-  [63191] = true, -- big boi
+  [56754] = true,  -- Serpent mop
+  [71543] = true,  -- Immerseus
+  [63191] = true,  -- big boi
 }
 
 local useExclude = {
-  [44566] = true, -- Ozumat big squid boi
+  [44566] = true,  -- Ozumat big squid boi
   [208478] = true, -- worm raid
 }
 
